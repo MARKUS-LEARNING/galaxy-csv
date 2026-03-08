@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>SPATIAL CSV</title>
+<title>GALAXY CSV</title>
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -17,7 +17,7 @@
   #hud .sub { font-size: 8px; letter-spacing: 2px; color: #666; margin-top: 2px; }
 
   #info {
-    position: fixed; bottom: 20px; left: 20px; z-index: 10;
+    position: fixed; bottom: 46px; left: 20px; z-index: 10;
     font-size: 8px; letter-spacing: 2px; color: #555;
     line-height: 2; pointer-events: none;
   }
@@ -90,32 +90,36 @@
   #ctrl-panel .chip.on { background: #222; color: #fff; border-color: #222; }
   #ctrl-panel hr { border: none; border-top: 1px solid #f0f0f0; margin: 10px 0; }
 
-  #drop-zone {
+  /* Upload prompt (bottom-left) */
+  #upload-bar {
+    position: fixed; bottom: 20px; left: 20px; z-index: 10;
+  }
+  #upload-bar .ub-link {
+    font-family: inherit; font-size: 8px; letter-spacing: 2px;
+    text-transform: uppercase; color: #777; cursor: pointer;
+    background: none; border: none; padding: 0;
+    text-decoration: underline; text-underline-offset: 3px;
+  }
+  #upload-bar .ub-link:hover { color: #333; }
+  #upload-bar input { display: none; }
+  #upload-bar .ub-status {
+    font-size: 8px; letter-spacing: 2px; color: #999;
+    margin-top: 4px; display: none;
+  }
+
+  /* Loading overlay (shown only during initial load) */
+  #loading {
     position: fixed; top: 50%; left: 50%; transform: translate(-50%,-50%);
     z-index: 100; text-align: center;
+    font-size: 9px; letter-spacing: 6px; color: #999; text-transform: uppercase;
   }
-  #drop-zone.hidden { display: none; }
-  #drop-zone .title { font-size: 9px; letter-spacing: 6px; color: #999; text-transform: uppercase; margin-bottom: 16px; }
-  #drop-zone .area {
-    width: 300px; height: 130px; border: 1px dashed #ccc;
-    display: flex; align-items: center; justify-content: center;
-    flex-direction: column; cursor: pointer;
-  }
-  #drop-zone .area:hover { border-color: #888; }
-  #drop-zone .area p { font-size: 8px; letter-spacing: 3px; color: #999; margin: 4px; }
-  #drop-zone input { display: none; }
-  #drop-zone .btn {
-    margin-top: 12px; font-family: inherit; font-size: 8px; letter-spacing: 3px;
-    text-transform: uppercase; background: none; border: 1px solid #ddd;
-    color: #999; padding: 6px 16px; cursor: pointer;
-  }
-  #drop-zone .btn:hover { border-color: #888; color: #555; }
+  #loading.hidden { display: none; }
 </style>
 </head>
 <body>
 
 <div id="hud">
-  <h1>Spatial CSV</h1>
+  <h1>Galaxy CSV</h1>
   <div class="sub" id="hud-sub"></div>
 </div>
 <div id="info"></div>
@@ -153,14 +157,12 @@
   <a class="ac-yt" href="#" target="_blank" rel="noopener noreferrer">YouTube</a>
 </div>
 
-<div id="drop-zone">
-  <div class="title" id="drop-title">/// Load CSV ///</div>
-  <div class="area" id="drop-area">
-    <p>Drop file here</p>
-    <p style="color:#ccc">or click to browse</p>
-    <input type="file" id="file-input" accept=".csv,.tsv,.txt,text/*">
-  </div>
-  <button class="btn" id="load-sample">Load Sample Music Data</button>
+<div id="loading">/// Loading library... ///</div>
+
+<div id="upload-bar">
+  <button class="ub-link" id="upload-btn">Upload your own CSV</button>
+  <input type="file" id="file-input" accept=".csv,.tsv,.txt,text/*">
+  <div class="ub-status" id="upload-status"></div>
 </div>
 
 <script type="importmap">
@@ -588,35 +590,48 @@ function animate(){
 }
 
 // ─── Load ───
-function handleFile(f){
-  document.getElementById('drop-title').textContent=`/// Loading ${(f.size/1048576).toFixed(1)} MB... ///`;
-  const rd=new FileReader();
-  rd.onerror=()=>{document.getElementById('drop-title').textContent='/// Error ///'};
-  rd.onload=e=>{
-    const raw=e.target.result;
-    document.getElementById('drop-title').textContent='/// Parsing... ///';
-    setTimeout(()=>{
-      try{
-        const{headers:h,rows:r}=parseCSV(raw);
-        if(!r.length){document.getElementById('drop-title').textContent=`/// 0 rows (${h.length} cols) ///`;return}
-        totalRows=r.length;
-        document.getElementById('drop-zone').classList.add('hidden');
-        build(h,sample(r));
-      }catch(err){document.getElementById('drop-title').textContent=`/// ${err.message} ///`}
-    },30);
+function loadCSVText(text) {
+  const { headers: h, rows: r } = parseCSV(text);
+  if (!r.length) return;
+  totalRows = r.length;
+  build(h, sample(r));
+}
+
+function handleFile(f) {
+  const status = document.getElementById('upload-status');
+  status.style.display = 'block';
+  status.textContent = `/// Loading ${(f.size / 1048576).toFixed(1)} MB... ///`;
+  const rd = new FileReader();
+  rd.onerror = () => { status.textContent = '/// Error ///'; };
+  rd.onload = e => {
+    status.textContent = '/// Parsing... ///';
+    setTimeout(() => {
+      try {
+        loadCSVText(e.target.result);
+        status.textContent = `/// ${totalRows.toLocaleString()} tracks loaded ///`;
+        setTimeout(() => { status.style.display = 'none'; }, 3000);
+      } catch (err) { status.textContent = `/// ${err.message} ///`; }
+    }, 30);
   };
   rd.readAsText(f);
 }
 
-document.getElementById('drop-area').addEventListener('click',()=>document.getElementById('file-input').click());
-document.getElementById('file-input').addEventListener('change',e=>{if(e.target.files[0])handleFile(e.target.files[0])});
-document.body.addEventListener('dragover',e=>{e.preventDefault()});
-document.body.addEventListener('drop',e=>{e.preventDefault();if(e.dataTransfer.files[0])handleFile(e.dataTransfer.files[0])});
-document.getElementById('load-sample').addEventListener('click',async()=>{
-  try{const t=await(await fetch('sample_music.csv')).text();const{headers:h,rows:r}=parseCSV(t);
-    if(!r.length)return;totalRows=r.length;document.getElementById('drop-zone').classList.add('hidden');build(h,r);
-  }catch{document.getElementById('drop-title').textContent='/// Error ///'}
-});
+// Upload button + drag-and-drop
+document.getElementById('upload-btn').addEventListener('click', () => document.getElementById('file-input').click());
+document.getElementById('file-input').addEventListener('change', e => { if (e.target.files[0]) handleFile(e.target.files[0]); });
+document.body.addEventListener('dragover', e => { e.preventDefault(); });
+document.body.addEventListener('drop', e => { e.preventDefault(); if (e.dataTransfer.files[0]) handleFile(e.dataTransfer.files[0]); });
+
+// Auto-load default library on startup
+async function loadDefaultLibrary() {
+  try {
+    const text = await (await fetch('music_library.csv')).text();
+    loadCSVText(text);
+    document.getElementById('loading').classList.add('hidden');
+  } catch {
+    document.getElementById('loading').textContent = '/// Error loading library ///';
+  }
+}
 
 // ─── Customize Panel ───
 function rebuildViz() {
@@ -693,7 +708,7 @@ document.getElementById('t-autofly').addEventListener('click', function() {
   autoFly = this.classList.contains('on');
 });
 
-initScene();animate();
+initScene();animate();loadDefaultLibrary();
 </script>
 </body>
 </html>
