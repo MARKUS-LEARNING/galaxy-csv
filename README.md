@@ -65,15 +65,49 @@ python3 -m http.server 8000
 # open http://localhost:8000
 ```
 
-Any static file server works — the app is a single `index.html` that loads Three.js from CDN.
+Any static file server works — the app is a single `index.html` with vendored Three.js (no external CDN required).
 
 ## Stack
 
-- [Three.js](https://threejs.org/) r162 (ES module via CDN)
+- [Three.js](https://threejs.org/) r162 (self-hosted in `vendor/`)
 - EffectComposer + UnrealBloomPass for glow
 - OrbitControls for camera
 - Instanced meshes (8 geometry types) for performance
 - Zero build tools — pure HTML/JS
+
+## Security
+
+This application runs **entirely in your browser**. No data you upload is ever sent to a server.
+CSV files are processed locally using the JavaScript File API and are never transmitted externally.
+
+However, users should be aware of the following:
+
+- **Do not upload CSV files containing sensitive or personal information.** This includes files
+  with names, addresses, health data, financial records, or any PII (Personally Identifiable Information).
+- **Do not upload CSV files from untrusted sources.** While this app sanitizes rendered output,
+  you should treat unknown CSV files with the same caution as unknown executable files.
+- **This app is hosted on GitHub Pages**, a static hosting service. GitHub Pages does not support
+  server-side security headers. A Content Security Policy is enforced via a `<meta>` tag.
+
+To report a security vulnerability, see [SECURITY.md](./SECURITY.md).
+
+## Data & Privacy
+
+All visualization happens locally in your browser. This project does not:
+- Collect, store, or transmit your data
+- Use cookies or local storage
+- Include any analytics or tracking scripts
+- Connect to any external API (after page load, all network requests are blocked by CSP)
+
+## Disclaimer
+
+The sample data files (`music_library.csv`, `sample_music.csv`) are provided for demonstration
+only. See [DATA_SOURCES.md](./DATA_SOURCES.md) for provenance and licensing of these files.
+The MIT license in this repository applies to source code only and does not extend to data files
+unless explicitly stated in DATA_SOURCES.md.
+
+Users are solely responsible for ensuring they have the right to process and visualize any
+CSV data they upload into this tool.
 
 ## License
 

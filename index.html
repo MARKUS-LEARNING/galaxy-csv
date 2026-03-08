@@ -2,6 +2,18 @@
 <html lang="en">
 <head>
 <meta charset="UTF-8">
+<meta http-equiv="Content-Security-Policy"
+      content="
+        default-src 'self';
+        script-src 'self' 'unsafe-inline';
+        style-src 'self' 'unsafe-inline' https://fonts.googleapis.com https://fonts.gstatic.com;
+        font-src https://fonts.gstatic.com;
+        img-src 'self' data: blob:;
+        connect-src 'self';
+        object-src 'none';
+        base-uri 'self';
+        form-action 'none';
+      ">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
 <title>GALAXY CSV</title>
 <style>
@@ -167,8 +179,8 @@
 
 <script type="importmap">
 { "imports": {
-  "three": "https://cdn.jsdelivr.net/npm/three@0.162.0/build/three.module.js",
-  "three/addons/": "https://cdn.jsdelivr.net/npm/three@0.162.0/examples/jsm/"
+  "three": "./vendor/three.module.min.js",
+  "three/addons/": "./vendor/"
 } }
 </script>
 
@@ -236,6 +248,33 @@ function parseCSV(text){
   return{headers:h,rows};
 }
 function sample(rows){if(rows.length<=MAX_PTS)return rows;const s=rows.length/MAX_PTS,o=[];for(let i=0;i<rows.length&&o.length<MAX_PTS;i+=s)o.push(rows[Math.floor(i)]);return o}
+
+// ─── Safe URL builder ───
+function buildYouTubeSearchUrl(song, artist) {
+  const query = [artist, song].filter(Boolean).join(' ');
+  return 'https://www.youtube.com/results?search_query=' + encodeURIComponent(query);
+}
+
+function safeHref(url) {
+  try {
+    const parsed = new URL(url);
+    if (parsed.protocol !== 'https:' && parsed.protocol !== 'http:') return '#';
+    return url;
+  } catch { return '#'; }
+}
+
+// ─── File validation ───
+const MAX_FILE_SIZE_BYTES = 10 * 1024 * 1024;
+const ALLOWED_EXTENSIONS = ['.csv', '.tsv', '.txt'];
+
+function validateCsvFile(file) {
+  if (!file) return 'No file provided.';
+  const ext = file.name.slice(file.name.lastIndexOf('.')).toLowerCase();
+  if (!ALLOWED_EXTENSIONS.includes(ext)) return `Invalid file type. Please upload a .csv file. Got: ${ext}`;
+  if (file.size > MAX_FILE_SIZE_BYTES) return `File too large (${(file.size / 1024 / 1024).toFixed(1)} MB). Maximum is 10 MB.`;
+  if (file.size === 0) return 'File is empty.';
+  return null;
+}
 
 // ─── Find columns ───
 function findCol(hdrs, kws) {
@@ -448,12 +487,17 @@ function build(hdrs, rows){
   // HUD
   const ct = totalRows > rows.length ? `${rows.length.toLocaleString()} of ${totalRows.toLocaleString()}` : rows.length.toLocaleString();
   document.getElementById('hud-sub').textContent = `${ct} tracks`;
-  const esc = s => { const d = document.createElement('div'); d.textContent = s; return d.innerHTML; };
-  document.getElementById('info').innerHTML = [
-    yearCol ? `← ${minYear} ─── ${esc(yearCol)} ─── ${maxYear} →` : '',
-    genreCol ? `↕ ${esc(genreCol)} (top ${topGenres.length})` : '',
-    'scroll zoom · drag orbit · arrows fly · click to inspect',
-  ].filter(Boolean).join('<br>');
+  const infoEl = document.getElementById('info');
+  infoEl.textContent = '';
+  const infoLines = [
+    yearCol ? `\u2190 ${minYear} \u2500\u2500\u2500 ${yearCol} \u2500\u2500\u2500 ${maxYear} \u2192` : '',
+    genreCol ? `\u2195 ${genreCol} (top ${topGenres.length})` : '',
+    'scroll zoom \u00b7 drag orbit \u00b7 arrows fly \u00b7 click to inspect',
+  ].filter(Boolean);
+  infoLines.forEach((line, i) => {
+    if (i > 0) infoEl.appendChild(document.createElement('br'));
+    infoEl.appendChild(document.createTextNode(line));
+  });
 }
 
 function makeLabel(text, color){
@@ -545,8 +589,7 @@ function onClick(e) {
     // YouTube search link
     const artist = (entry.artistCol && r[entry.artistCol]) || '';
     const song = r[entry.nameCol] || '';
-    const ytQuery = encodeURIComponent(artist + ' ' + song);
-    card.querySelector('.ac-yt').href = 'https://www.youtube.com/results?search_query=' + ytQuery;
+    card.querySelector('.ac-yt').href = safeHref(buildYouTubeSearchUrl(song, artist));
 
     card.style.display = 'block';
     card.style.left = Math.min(e.clientX + 14, innerWidth - 400) + 'px';
@@ -599,6 +642,13 @@ function loadCSVText(text) {
 
 function handleFile(f) {
   const status = document.getElementById('upload-status');
+  const error = validateCsvFile(f);
+  if (error) {
+    status.style.display = 'block';
+    status.textContent = `/// ${error} ///`;
+    setTimeout(() => { status.style.display = 'none'; }, 4000);
+    return;
+  }
   status.style.display = 'block';
   status.textContent = `/// Loading ${(f.size / 1048576).toFixed(1)} MB... ///`;
   const rd = new FileReader();
