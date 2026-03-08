@@ -1,6 +1,6 @@
 # Galaxy Artifact
 
-A 3D data visualizer that turns any CSV or XML into a navigable galaxy of floating geometric shapes. Built with Three.js — no dependencies, no build step, just one HTML file.
+A 3D data visualizer that turns any music library export CSV or XML into a navigable galaxy of floating geometric shapes. Built with Three.js — no dependencies, no build step, just one HTML file.
 
 **[Live Demo](https://markus-learning.github.io/galaxy-artifact/)**
 
