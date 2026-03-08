@@ -6,6 +6,8 @@ A 3D data visualizer that turns any CSV or XML into a navigable galaxy of floati
 
 ![Galaxy Artifact](screenshot.png)
 
+<video src="demo.mp4" autoplay loop muted playsinline width="100%"></video>
+
 ![Galaxy Artifact](https://img.shields.io/badge/three.js-r162-blue) ![GitHub Pages](https://img.shields.io/badge/deploy-GitHub%20Pages-brightgreen)
 
 ## What It Does
