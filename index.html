@@ -71,6 +71,45 @@
   #album-card .ac-link.ac-yt:hover { background: #cc0000; }
   #album-card .ac-link.ac-spotify:hover { background: #1db954; }
   #album-card .ac-link.ac-apple:hover { background: #fa243c; }
+
+  /* Heart button on album card */
+  #album-card .ac-heart {
+    position: absolute; top: 8px; right: 38px;
+    background: none; border: none; cursor: pointer;
+    padding: 2px 4px; line-height: 1;
+  }
+  #album-card .ac-heart .heart-svg {
+    transition: transform 0.3s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+  #album-card .ac-heart .heart-path {
+    fill: none;
+    stroke: #ccc;
+    stroke-width: 1.5;
+    stroke-dasharray: 3 2;
+    transition: fill 0.3s ease, stroke 0.3s ease, stroke-dasharray 0.3s ease;
+  }
+  #album-card .ac-heart:hover .heart-path {
+    stroke: #e74c3c;
+    stroke-dasharray: none;
+  }
+  #album-card .ac-heart.hearted .heart-path {
+    fill: #e74c3c;
+    stroke: #e74c3c;
+    stroke-dasharray: none;
+  }
+  @keyframes heart-jump {
+    0%   { transform: scale(1); }
+    15%  { transform: scale(0.7); }
+    30%  { transform: scale(1.3) rotate(-8deg); }
+    45%  { transform: scale(0.95) rotate(4deg); }
+    60%  { transform: scale(1.15) rotate(-2deg); }
+    75%  { transform: scale(0.98); }
+    100% { transform: scale(1); }
+  }
+  #album-card .ac-heart.jumping .heart-svg {
+    animation: heart-jump 0.6s cubic-bezier(0.175, 0.885, 0.32, 1.275);
+  }
+
   #album-card.pinned { border-left: 3px solid #555; }
 
   /* Customize panel */
@@ -133,6 +172,72 @@
     border-radius: 1px; transition: width 0.15s;
   }
 
+  /* Artifact Bag / Soul */
+  #artifact-bag {
+    position: fixed; bottom: 90px; left: 20px; z-index: 15;
+  }
+  #artifact-bag .ab-toggle {
+    font-family: inherit; font-size: 8px; letter-spacing: 2px;
+    text-transform: uppercase; color: #777; cursor: pointer;
+    background: none; border: none; padding: 0;
+    display: flex; align-items: center; gap: 6px;
+  }
+  #artifact-bag .ab-toggle:hover { color: #e74c3c; }
+  #artifact-bag .ab-icon {
+    font-size: 14px; transition: transform 0.3s ease, color 0.3s ease;
+  }
+  #artifact-bag .ab-count {
+    background: #e74c3c; color: #fff; font-size: 7px;
+    padding: 1px 5px; border-radius: 8px; min-width: 16px;
+    text-align: center; display: none;
+  }
+  #artifact-bag .ab-count.has-items { display: inline-block; }
+  #artifact-bag .ab-panel {
+    display: none; position: absolute; bottom: 28px; left: 0;
+    background: rgba(255,255,255,0.97); backdrop-filter: blur(12px);
+    border: 1px solid #eee; padding: 12px 14px;
+    width: 280px; max-height: 320px; overflow-y: auto;
+    box-shadow: 0 8px 32px rgba(0,0,0,0.12); border-radius: 4px;
+  }
+  #artifact-bag .ab-panel.open { display: block; }
+  #artifact-bag .ab-header {
+    display: flex; justify-content: space-between; align-items: center;
+    margin-bottom: 8px; padding-bottom: 6px; border-bottom: 1px solid #f0f0f0;
+    font-size: 8px; letter-spacing: 2px; text-transform: uppercase; color: #555;
+  }
+  #artifact-bag .ab-export {
+    font-family: inherit; font-size: 7px; letter-spacing: 1px;
+    text-transform: uppercase; padding: 3px 8px;
+    background: #222; color: #fff; border: none; cursor: pointer;
+    border-radius: 2px;
+  }
+  #artifact-bag .ab-export:hover { background: #555; }
+  #artifact-bag .ab-item {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 4px 0; border-bottom: 1px solid #f8f8f8;
+    font-size: 9px; letter-spacing: 1px; color: #333;
+  }
+  #artifact-bag .ab-item-name { flex: 1; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+  #artifact-bag .ab-item-artist { color: #888; font-size: 8px; margin-left: 6px; flex-shrink: 0; }
+  #artifact-bag .ab-item-remove {
+    background: none; border: none; color: #ccc; cursor: pointer;
+    font-size: 12px; padding: 0 2px; font-family: inherit; flex-shrink: 0;
+  }
+  #artifact-bag .ab-item-remove:hover { color: #e74c3c; }
+  #artifact-bag .ab-empty {
+    font-size: 8px; color: #bbb; letter-spacing: 1px;
+    text-align: center; padding: 16px 0;
+  }
+
+  /* Swooping ghost animation */
+  .swoop-ghost {
+    position: fixed; z-index: 100;
+    font-family: 'Space Mono', monospace;
+    font-size: 12px; font-weight: 700;
+    letter-spacing: 2px; color: #e74c3c;
+    pointer-events: none; white-space: nowrap;
+  }
+
   /* Drag-and-drop overlay */
   body.drag-over::after {
     content: ''; position: fixed; inset: 12px; z-index: 50;
@@ -185,6 +290,11 @@
 </div>
 
 <div id="album-card">
+  <button class="ac-heart" title="Add to Artifact Soul">
+    <svg class="heart-svg" viewBox="0 0 24 24" width="20" height="20">
+      <path class="heart-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
+    </svg>
+  </button>
   <button class="ac-close">&times;</button>
   <div class="ac-name"></div>
   <div class="ac-sub"></div>
@@ -198,6 +308,22 @@
 </div>
 
 <div id="loading">/// Loading library... ///</div>
+
+<div id="artifact-bag">
+  <button class="ab-toggle" id="ab-toggle">
+    <span class="ab-icon">♡</span>
+    <span class="ab-count" id="ab-count">0</span>
+    <span class="ab-label">Artifact Soul</span>
+  </button>
+  <div class="ab-panel" id="ab-panel">
+    <div class="ab-header">
+      <span>Artifact Soul</span>
+      <button class="ab-export" id="ab-export" title="Export collection">Export</button>
+    </div>
+    <div class="ab-list" id="ab-list"></div>
+    <div class="ab-empty" id="ab-empty">Heart artifacts to build your soul</div>
+  </div>
+</div>
 
 <div id="upload-bar">
   <button class="ub-link" id="upload-btn">Upload your own CSV or XML</button>
@@ -294,6 +420,95 @@ let flyOffset = 0;
 let autoFly = true;
 let layoutMode = 'layers'; // 'layers' | 'sphere'
 let selectedCard = null; // currently shown card entry
+
+// ─── Artifact Soul (hearted collection) ───
+let artifactSoul = JSON.parse(localStorage.getItem('artifactSoul') || '[]');
+
+function getArtifactKey(entry) {
+  const r = entry.row;
+  const name = r[entry.nameCol] || '';
+  const artist = (entry.artistCol && r[entry.artistCol]) || '';
+  const album = (entry.albumCol && r[entry.albumCol]) || '';
+  return name + '|||' + artist + '|||' + album;
+}
+
+function isHearted(entry) {
+  const key = getArtifactKey(entry);
+  return artifactSoul.some(a => a.key === key);
+}
+
+function saveArtifactSoul() {
+  localStorage.setItem('artifactSoul', JSON.stringify(artifactSoul));
+  updateBagUI();
+}
+
+function escapeHtml(str) {
+  const d = document.createElement('div');
+  d.textContent = str;
+  return d.innerHTML;
+}
+
+function createSwoopAnimation(nameText, startRect) {
+  const bag = document.getElementById('ab-toggle');
+  const bagRect = bag.getBoundingClientRect();
+
+  const ghost = document.createElement('div');
+  ghost.className = 'swoop-ghost';
+  ghost.textContent = nameText;
+  ghost.style.left = startRect.left + 'px';
+  ghost.style.top = startRect.top + 'px';
+  document.body.appendChild(ghost);
+
+  const dx = bagRect.left + bagRect.width / 2 - startRect.left;
+  const dy = bagRect.top + bagRect.height / 2 - startRect.top;
+
+  ghost.animate([
+    { opacity: 1, transform: 'scale(1) translate(0, 0)', offset: 0 },
+    { opacity: 1, transform: 'scale(1.15) translate(0, -15px)', offset: 0.2 },
+    { opacity: 0.6, transform: 'scale(0.4) translate(' + dx + 'px, ' + dy + 'px)', offset: 1 }
+  ], {
+    duration: 700,
+    easing: 'cubic-bezier(0.25, 0.46, 0.45, 0.94)',
+    fill: 'forwards'
+  });
+
+  setTimeout(() => {
+    ghost.remove();
+    const icon = document.querySelector('#artifact-bag .ab-icon');
+    icon.style.transform = 'scale(1.5)';
+    icon.style.color = '#e74c3c';
+    setTimeout(() => { icon.style.transform = ''; icon.style.color = ''; }, 250);
+  }, 700);
+}
+
+function updateBagUI() {
+  const countEl = document.getElementById('ab-count');
+  const listEl = document.getElementById('ab-list');
+  const emptyEl = document.getElementById('ab-empty');
+
+  countEl.textContent = artifactSoul.length;
+  countEl.classList.toggle('has-items', artifactSoul.length > 0);
+
+  const icon = document.querySelector('#artifact-bag .ab-icon');
+  icon.textContent = artifactSoul.length > 0 ? '\u2665' : '\u2661';
+
+  listEl.innerHTML = '';
+  if (artifactSoul.length === 0) {
+    emptyEl.style.display = '';
+    return;
+  }
+  emptyEl.style.display = 'none';
+
+  artifactSoul.forEach((a, i) => {
+    const item = document.createElement('div');
+    item.className = 'ab-item';
+    item.innerHTML =
+      '<span class="ab-item-name">' + escapeHtml(a.name) + '</span>' +
+      '<span class="ab-item-artist">' + escapeHtml(a.artist) + '</span>' +
+      '<button class="ab-item-remove" data-idx="' + i + '" title="Remove">&times;</button>';
+    listEl.appendChild(item);
+  });
+}
 let pinnedInstance = null; // { groupIdx, instanceId, entry, originPos, targetPos, pinTime, settled }
 let unpinning = null; // { groupIdx, instanceId, startPos, startScale, originPos, unpinTime, data }
 
@@ -1003,6 +1218,11 @@ function onClick(e) {
     card.querySelector('.ac-spotify').href = safeHref(buildSpotifySearchUrl(song, artist));
     card.querySelector('.ac-apple').href = safeHref(buildAppleMusicSearchUrl(song, artist));
 
+    // Sync heart state
+    const heartBtn = card.querySelector('.ac-heart');
+    heartBtn.classList.toggle('hearted', isHearted(entry));
+    heartBtn.classList.remove('jumping');
+
     card.classList.add('pinned');
     card.style.display = 'block';
   } else {
@@ -1025,6 +1245,83 @@ document.getElementById('album-card').querySelector('.ac-close').addEventListene
   e.stopPropagation();
   unpinInstance();
 });
+
+// ─── Heart click ───
+document.getElementById('album-card').querySelector('.ac-heart').addEventListener('click', (e) => {
+  e.stopPropagation();
+  if (!selectedCard) return;
+
+  const heartBtn = e.currentTarget;
+  const entry = selectedCard;
+  const key = getArtifactKey(entry);
+  const r = entry.row;
+
+  if (isHearted(entry)) {
+    artifactSoul = artifactSoul.filter(a => a.key !== key);
+    heartBtn.classList.remove('hearted');
+  } else {
+    const artifact = {
+      key,
+      name: r[entry.nameCol] || '',
+      artist: (entry.artistCol && r[entry.artistCol]) || '',
+      album: (entry.albumCol && r[entry.albumCol]) || '',
+      genre: (entry.genreCol && r[entry.genreCol]) || '',
+      year: (entry.yearCol && r[entry.yearCol]) || '',
+      heartedAt: new Date().toISOString(),
+    };
+    artifactSoul.push(artifact);
+    heartBtn.classList.add('hearted');
+
+    // Jump animation
+    heartBtn.classList.add('jumping');
+    setTimeout(() => heartBtn.classList.remove('jumping'), 600);
+
+    // Swoop animation
+    const nameEl = document.querySelector('#album-card .ac-name');
+    const nameRect = nameEl.getBoundingClientRect();
+    createSwoopAnimation(artifact.name, nameRect);
+  }
+
+  saveArtifactSoul();
+});
+
+// ─── Artifact Bag panel ───
+document.getElementById('ab-toggle').addEventListener('click', () => {
+  document.getElementById('ab-panel').classList.toggle('open');
+});
+
+document.getElementById('ab-list').addEventListener('click', (e) => {
+  const btn = e.target.closest('.ab-item-remove');
+  if (!btn) return;
+  const idx = parseInt(btn.dataset.idx);
+  artifactSoul.splice(idx, 1);
+  saveArtifactSoul();
+  if (selectedCard && !isHearted(selectedCard)) {
+    document.querySelector('.ac-heart')?.classList.remove('hearted');
+  }
+});
+
+document.getElementById('ab-export').addEventListener('click', () => {
+  if (!artifactSoul.length) return;
+  const exportData = {
+    format: 'artifact-soul-v1',
+    exportedAt: new Date().toISOString(),
+    count: artifactSoul.length,
+    artifacts: artifactSoul.map(a => ({
+      name: a.name, artist: a.artist, album: a.album,
+      genre: a.genre, year: a.year, heartedAt: a.heartedAt,
+    }))
+  };
+  const blob = new Blob([JSON.stringify(exportData, null, 2)], { type: 'application/json' });
+  const url = URL.createObjectURL(blob);
+  const a = document.createElement('a');
+  a.href = url;
+  a.download = 'artifact-soul-' + new Date().toISOString().slice(0, 10) + '.json';
+  a.click();
+  URL.revokeObjectURL(url);
+});
+
+updateBagUI();
 
 // ─── Page Visibility ───
 let isPageVisible = true;
@@ -1300,6 +1597,7 @@ Object.entries(BACKGROUNDS).forEach(([name, hex]) => {
     document.getElementById('info').style.color = isDark ? '#999' : '';
     document.querySelector('#hud h1').style.color = isDark ? '#eee' : '#333';
     document.querySelector('#hud .sub').style.color = isDark ? '#aaa' : '#666';
+    document.querySelector('#artifact-bag .ab-toggle').style.color = isDark ? '#aaa' : '#777';
   });
   bgRow.appendChild(btn);
 });
