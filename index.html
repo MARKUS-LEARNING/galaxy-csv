@@ -302,59 +302,68 @@
   #filter-toggle:hover { border-color: #999; color: #222; }
   #filter-toggle.active { background: #222; color: #fff; border-color: #222; }
   #filter-panel {
-    position: fixed; top: 44px; right: 130px; z-index: 11;
+    position: fixed; top: 44px; right: 20px; z-index: 11;
     background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
-    border: 1px solid #eee; padding: 14px 16px;
-    width: 260px; max-height: calc(100vh - 60px); overflow-y: auto;
-    display: none; box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+    border: 1px solid #eee; padding: 16px 18px;
+    width: 280px; max-height: calc(100vh - 60px); overflow-y: auto;
+    display: none; box-shadow: 0 4px 24px rgba(0,0,0,0.08);
+    border-radius: 4px;
   }
   #filter-panel.open { display: block; }
-  #filter-panel label {
-    display: block; font-size: 7px; letter-spacing: 2px;
-    text-transform: uppercase; color: #888; margin: 8px 0 3px;
+  #filter-panel .fp-section-title {
+    font-size: 8px; letter-spacing: 2px; text-transform: uppercase;
+    color: #999; margin: 0 0 8px;
   }
-  #filter-panel label:first-child { margin-top: 0; }
+  #filter-panel .fp-sort-row {
+    display: flex; gap: 6px; align-items: center; margin-bottom: 16px;
+  }
   #filter-panel select {
+    font-family: inherit; font-size: 10px; letter-spacing: 0.5px;
+    padding: 6px 8px; border: 1px solid #e0e0e0; border-radius: 3px;
+    background: #fff; color: #333; flex: 1; outline: none;
+  }
+  #filter-panel select:focus { border-color: #999; }
+  #filter-panel .fp-sort-dir {
     font-family: inherit; font-size: 9px; letter-spacing: 1px;
-    padding: 3px 6px; border: 1px solid #ddd; background: #fff;
-    color: #555; flex: 1; width: 100%;
+    padding: 6px 10px; border: 1px solid #e0e0e0; border-radius: 3px;
+    background: #fff; color: #555; cursor: pointer; white-space: nowrap;
   }
-  #filter-panel hr { border: none; border-top: 1px solid #f0f0f0; margin: 10px 0; }
-  #filter-panel .row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
-  #filter-panel .chip {
-    font-family: inherit; font-size: 7px; letter-spacing: 1px;
-    padding: 3px 8px; border: 1px solid #ddd; background: none;
-    color: #666; cursor: pointer; text-transform: uppercase;
+  #filter-panel .fp-sort-dir:hover { border-color: #999; }
+  #filter-panel .fp-sort-dir.on { background: #222; color: #fff; border-color: #222; }
+  #filter-panel .fp-divider { border: none; border-top: 1px solid #f0f0f0; margin: 0 0 14px; }
+  #filter-panel .fp-col-name {
+    font-size: 9px; letter-spacing: 1px; text-transform: uppercase;
+    color: #555; margin: 0 0 6px; font-weight: 700;
   }
-  #filter-panel .chip:hover { border-color: #999; }
-  #filter-panel .chip.on { background: #222; color: #fff; border-color: #222; }
-  .filter-section { margin-bottom: 4px; }
-  .filter-section-header {
-    font-family: inherit; font-size: 8px; letter-spacing: 1px;
-    text-transform: uppercase; color: #666; cursor: pointer;
-    background: none; border: none; padding: 4px 0; width: 100%;
-    text-align: left; display: flex; justify-content: space-between;
+  #filter-panel .fp-chips {
+    display: flex; gap: 4px; flex-wrap: wrap; margin-bottom: 14px;
   }
-  .filter-section-header:hover { color: #222; }
-  .filter-section-body {
-    display: none; padding-left: 4px; max-height: 140px; overflow-y: auto;
+  #filter-panel .fp-chip {
+    font-family: inherit; font-size: 9px; letter-spacing: 0.5px;
+    padding: 4px 10px; border: 1px solid #e0e0e0; border-radius: 12px;
+    background: #fff; color: #555; cursor: pointer;
+    transition: all 0.15s ease;
   }
-  .filter-section-body.open { display: block; }
-  .filter-section-body label {
-    display: flex !important; align-items: center; gap: 4px;
-    font-size: 9px !important; letter-spacing: 0 !important;
-    text-transform: none !important; color: #555 !important;
-    margin: 2px 0 !important; cursor: pointer;
+  #filter-panel .fp-chip:hover { border-color: #aaa; color: #222; }
+  #filter-panel .fp-chip.on { background: #222; color: #fff; border-color: #222; }
+  #filter-panel .fp-chip .fp-chip-count {
+    font-size: 8px; color: #aaa; margin-left: 3px;
   }
-  .filter-section-body input[type=checkbox] { accent-color: #555; }
-  .filter-search {
-    width: 100%; font-family: inherit; font-size: 8px;
-    letter-spacing: 1px; padding: 3px 6px;
-    border: 1px solid #eee; margin-bottom: 4px;
+  #filter-panel .fp-chip.on .fp-chip-count { color: rgba(255,255,255,0.5); }
+  #filter-panel .fp-footer {
+    display: flex; justify-content: space-between; align-items: center;
+    padding-top: 10px; border-top: 1px solid #f0f0f0;
   }
-  #filter-status {
-    font-size: 8px; letter-spacing: 1px; color: #767676; margin-top: 6px;
+  #filter-panel .fp-status {
+    font-size: 9px; letter-spacing: 0.5px; color: #999;
   }
+  #filter-panel .fp-clear {
+    font-family: inherit; font-size: 9px; letter-spacing: 1px;
+    text-transform: uppercase; padding: 5px 12px;
+    border: 1px solid #e0e0e0; border-radius: 3px;
+    background: #fff; color: #555; cursor: pointer;
+  }
+  #filter-panel .fp-clear:hover { border-color: #999; color: #222; }
 
   /* Upload prompt (bottom-left) */
   #upload-bar .ub-link {
@@ -549,9 +558,8 @@
     #mobile-menu { display: block; }
 
     /* Touch targets */
-    #ctrl-panel .chip, #filter-panel .chip, #mobile-menu .chip { min-height: 36px; min-width: 36px; padding: 8px 12px; font-size: 9px; }
-    .filter-section-header { min-height: 44px; font-size: 10px; display: flex; align-items: center; }
-    .filter-section-body label { min-height: 36px; font-size: 11px !important; }
+    #ctrl-panel .chip, #mobile-menu .chip { min-height: 36px; min-width: 36px; padding: 8px 12px; font-size: 9px; }
+    #filter-panel .fp-chip { min-height: 36px; padding: 8px 14px; font-size: 10px; }
 
     /* Font size minimums */
     #info { font-size: 10px; }
@@ -646,19 +654,17 @@
 
 <button id="filter-toggle" aria-label="Toggle filter and sort panel" aria-expanded="false">Filter / Sort</button>
 <div id="filter-panel">
-  <label>Sort by</label>
-  <div class="row">
+  <div class="fp-section-title">Sort</div>
+  <div class="fp-sort-row">
     <select id="sort-col"></select>
-    <button class="chip on" id="sort-dir">ASC</button>
+    <button class="fp-sort-dir on" id="sort-dir">ASC</button>
   </div>
-  <hr>
-  <label>Filters</label>
+  <hr class="fp-divider">
   <div id="filter-list"></div>
-  <hr>
-  <div class="row">
-    <button class="chip" id="filter-clear">Clear All</button>
+  <div class="fp-footer">
+    <span class="fp-status" id="filter-status"></span>
+    <button class="fp-clear" id="filter-clear">Clear</button>
   </div>
-  <div id="filter-status"></div>
 </div>
 
 <div id="album-card" role="dialog" aria-label="Album details">
@@ -823,18 +829,21 @@ function updateFilterStatus() {
   }
 }
 
-function onFilterChange(e) {
-  const col = e.target.dataset.col, val = e.target.dataset.val;
+function onFilterChipClick(col, val, chipEl) {
   if (!activeFilters[col]) activeFilters[col] = new Set();
-  if (e.target.checked) {
-    activeFilters[col].add(val);
-  } else {
+  if (activeFilters[col].has(val)) {
     activeFilters[col].delete(val);
+    chipEl.classList.remove('on');
     if (activeFilters[col].size === 0) delete activeFilters[col];
+  } else {
+    activeFilters[col].add(val);
+    chipEl.classList.add('on');
   }
   clearTimeout(_filterDebounce);
   _filterDebounce = setTimeout(rebuildViz, 150);
 }
+
+const MAX_FILTER_CHIPS = 20;
 
 function populateFilterPanel(hdrs, rows) {
   const sortSelect = document.getElementById('sort-col');
@@ -859,50 +868,30 @@ function populateFilterPanel(hdrs, rows) {
     if (uniqueVals.length === rows.length || uniqueVals.length <= 1) return;
     if (uniqueVals.length > 500) return;
 
-    const section = document.createElement('div');
-    section.className = 'filter-section';
+    const title = document.createElement('div');
+    title.className = 'fp-col-name';
+    title.textContent = col.length > 25 ? col.slice(0, 25) + '..' : col;
+    filterList.appendChild(title);
 
-    const header = document.createElement('button');
-    header.className = 'filter-section-header';
-    header.innerHTML = escapeHtml(col.length > 25 ? col.slice(0, 25) + '..' : col) +
-      ' <span style="font-size:7px;color:#bbb">' + uniqueVals.length + '</span>';
+    const chips = document.createElement('div');
+    chips.className = 'fp-chips';
 
-    const body = document.createElement('div');
-    body.className = 'filter-section-body';
+    const sorted = uniqueVals.sort((a, b) => valueFreq[b] - valueFreq[a]);
+    const shown = sorted.slice(0, MAX_FILTER_CHIPS);
 
-    header.addEventListener('click', () => body.classList.toggle('open'));
-
-    if (uniqueVals.length > 15) {
-      const search = document.createElement('input');
-      search.className = 'filter-search';
-      search.placeholder = 'Search...';
-      search.addEventListener('input', () => {
-        const q = search.value.toLowerCase();
-        body.querySelectorAll('label').forEach(lbl => {
-          lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
-        });
-      });
-      body.appendChild(search);
-    }
-
-    uniqueVals.sort((a, b) => valueFreq[b] - valueFreq[a]).forEach(val => {
-      const lbl = document.createElement('label');
-      const cb = document.createElement('input');
-      cb.type = 'checkbox';
-      cb.dataset.col = col;
-      cb.dataset.val = val;
-      cb.addEventListener('change', onFilterChange);
-      lbl.appendChild(cb);
+    shown.forEach(val => {
+      const chip = document.createElement('button');
+      chip.className = 'fp-chip';
       const display = val || '(empty)';
-      lbl.appendChild(document.createTextNode(
-        (display.length > 30 ? display.slice(0, 30) + '..' : display) + ' (' + valueFreq[val] + ')'
-      ));
-      body.appendChild(lbl);
+      const label = display.length > 20 ? display.slice(0, 20) + '..' : display;
+      chip.innerHTML = escapeHtml(label) + '<span class="fp-chip-count">' + valueFreq[val] + '</span>';
+      // Restore active state
+      if (activeFilters[col] && activeFilters[col].has(val)) chip.classList.add('on');
+      chip.addEventListener('click', () => onFilterChipClick(col, val, chip));
+      chips.appendChild(chip);
     });
 
-    section.appendChild(header);
-    section.appendChild(body);
-    filterList.appendChild(section);
+    filterList.appendChild(chips);
   });
 }
 
@@ -2516,7 +2505,7 @@ document.getElementById('filter-clear').addEventListener('click', () => {
   document.getElementById('sort-col').value = '';
   document.getElementById('sort-dir').textContent = 'ASC';
   document.getElementById('sort-dir').classList.add('on');
-  document.querySelectorAll('#filter-list input[type=checkbox]').forEach(cb => cb.checked = false);
+  document.querySelectorAll('#filter-list .fp-chip').forEach(c => c.classList.remove('on'));
   rebuildViz();
 });
 
