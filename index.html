@@ -152,6 +152,71 @@
   #ctrl-panel .chip.on { background: #222; color: #fff; border-color: #222; }
   #ctrl-panel hr { border: none; border-top: 1px solid #f0f0f0; margin: 10px 0; }
 
+  /* Filter/Sort panel */
+  #filter-toggle {
+    position: fixed; top: 20px; right: 130px; z-index: 12;
+    font-family: inherit; font-size: 8px; letter-spacing: 3px;
+    text-transform: uppercase; background: rgba(255,255,255,0.9);
+    border: 1px solid #ddd; color: #555; padding: 5px 12px;
+    cursor: pointer; backdrop-filter: blur(6px);
+  }
+  #filter-toggle:hover { border-color: #999; color: #222; }
+  #filter-toggle.active { background: #222; color: #fff; border-color: #222; }
+  #filter-panel {
+    position: fixed; top: 44px; right: 130px; z-index: 11;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+    border: 1px solid #eee; padding: 14px 16px;
+    width: 260px; max-height: calc(100vh - 60px); overflow-y: auto;
+    display: none; box-shadow: 0 2px 16px rgba(0,0,0,0.04);
+  }
+  #filter-panel.open { display: block; }
+  #filter-panel label {
+    display: block; font-size: 7px; letter-spacing: 2px;
+    text-transform: uppercase; color: #888; margin: 8px 0 3px;
+  }
+  #filter-panel label:first-child { margin-top: 0; }
+  #filter-panel select {
+    font-family: inherit; font-size: 9px; letter-spacing: 1px;
+    padding: 3px 6px; border: 1px solid #ddd; background: #fff;
+    color: #555; flex: 1; width: 100%;
+  }
+  #filter-panel hr { border: none; border-top: 1px solid #f0f0f0; margin: 10px 0; }
+  #filter-panel .row { display: flex; gap: 4px; flex-wrap: wrap; margin-top: 4px; }
+  #filter-panel .chip {
+    font-family: inherit; font-size: 7px; letter-spacing: 1px;
+    padding: 3px 8px; border: 1px solid #ddd; background: none;
+    color: #666; cursor: pointer; text-transform: uppercase;
+  }
+  #filter-panel .chip:hover { border-color: #999; }
+  #filter-panel .chip.on { background: #222; color: #fff; border-color: #222; }
+  .filter-section { margin-bottom: 4px; }
+  .filter-section-header {
+    font-family: inherit; font-size: 8px; letter-spacing: 1px;
+    text-transform: uppercase; color: #666; cursor: pointer;
+    background: none; border: none; padding: 4px 0; width: 100%;
+    text-align: left; display: flex; justify-content: space-between;
+  }
+  .filter-section-header:hover { color: #222; }
+  .filter-section-body {
+    display: none; padding-left: 4px; max-height: 140px; overflow-y: auto;
+  }
+  .filter-section-body.open { display: block; }
+  .filter-section-body label {
+    display: flex !important; align-items: center; gap: 4px;
+    font-size: 9px !important; letter-spacing: 0 !important;
+    text-transform: none !important; color: #555 !important;
+    margin: 2px 0 !important; cursor: pointer;
+  }
+  .filter-section-body input[type=checkbox] { accent-color: #555; }
+  .filter-search {
+    width: 100%; font-family: inherit; font-size: 8px;
+    letter-spacing: 1px; padding: 3px 6px;
+    border: 1px solid #eee; margin-bottom: 4px;
+  }
+  #filter-status {
+    font-size: 8px; letter-spacing: 1px; color: #999; margin-top: 6px;
+  }
+
   /* Upload prompt (bottom-left) */
   #upload-bar .ub-link {
     font-family: inherit; font-size: 13px; letter-spacing: 2px;
@@ -316,6 +381,23 @@
   </div>
 </div>
 
+<button id="filter-toggle">Filter / Sort</button>
+<div id="filter-panel">
+  <label>Sort by</label>
+  <div class="row">
+    <select id="sort-col"></select>
+    <button class="chip on" id="sort-dir">ASC</button>
+  </div>
+  <hr>
+  <label>Filters</label>
+  <div id="filter-list"></div>
+  <hr>
+  <div class="row">
+    <button class="chip" id="filter-clear">Clear All</button>
+  </div>
+  <div id="filter-status"></div>
+</div>
+
 <div id="album-card">
   <button class="ac-heart" title="Add to Artifact Archive">
     <svg class="heart-svg" viewBox="0 0 24 24" width="20" height="20">
@@ -426,6 +508,130 @@ let layoutMode = 'layers'; // 'layers' | 'sphere'
 let figure8Mode = false;
 let waveMode = false;
 let selectedCard = null; // currently shown card entry
+
+// ─── Filter & Sort ───
+let masterData = [];
+let activeFilters = {};
+let activeSortCol = null;
+let activeSortDir = 'asc';
+let _filterDebounce = null;
+
+function applyFilters(rows) {
+  const cols = Object.keys(activeFilters);
+  if (!cols.length) return rows;
+  return rows.filter(row => cols.every(col => {
+    const allowed = activeFilters[col];
+    if (!allowed || allowed.size === 0) return true;
+    return allowed.has((row[col] || '').toString());
+  }));
+}
+
+function applySort(rows) {
+  if (!activeSortCol) return rows;
+  const col = activeSortCol, dir = activeSortDir === 'asc' ? 1 : -1;
+  return [...rows].sort((a, b) => {
+    const va = (a[col] || ''), vb = (b[col] || '');
+    const na = parseFloat(va), nb = parseFloat(vb);
+    if (!isNaN(na) && !isNaN(nb)) return (na - nb) * dir;
+    return va.localeCompare(vb) * dir;
+  });
+}
+
+function updateFilterStatus() {
+  const el = document.getElementById('filter-status');
+  if (!el) return;
+  const activeCount = Object.values(activeFilters).filter(s => s && s.size > 0).length;
+  if (activeCount === 0) {
+    el.textContent = '';
+    document.getElementById('filter-toggle').classList.remove('active');
+  } else {
+    el.textContent = csvData.length + ' of ' + masterData.length + ' shown';
+    document.getElementById('filter-toggle').classList.add('active');
+  }
+}
+
+function onFilterChange(e) {
+  const col = e.target.dataset.col, val = e.target.dataset.val;
+  if (!activeFilters[col]) activeFilters[col] = new Set();
+  if (e.target.checked) {
+    activeFilters[col].add(val);
+  } else {
+    activeFilters[col].delete(val);
+    if (activeFilters[col].size === 0) delete activeFilters[col];
+  }
+  clearTimeout(_filterDebounce);
+  _filterDebounce = setTimeout(rebuildViz, 150);
+}
+
+function populateFilterPanel(hdrs, rows) {
+  const sortSelect = document.getElementById('sort-col');
+  sortSelect.innerHTML = '<option value="">\u2014 None \u2014</option>';
+  hdrs.forEach(h => {
+    const opt = document.createElement('option');
+    opt.value = h;
+    opt.textContent = h.length > 20 ? h.slice(0, 20) + '..' : h;
+    sortSelect.appendChild(opt);
+  });
+
+  const filterList = document.getElementById('filter-list');
+  filterList.innerHTML = '';
+
+  hdrs.forEach(col => {
+    const valueFreq = {};
+    rows.forEach(r => {
+      const v = (r[col] || '').toString();
+      valueFreq[v] = (valueFreq[v] || 0) + 1;
+    });
+    const uniqueVals = Object.keys(valueFreq);
+    if (uniqueVals.length === rows.length || uniqueVals.length <= 1) return;
+    if (uniqueVals.length > 500) return;
+
+    const section = document.createElement('div');
+    section.className = 'filter-section';
+
+    const header = document.createElement('button');
+    header.className = 'filter-section-header';
+    header.innerHTML = escapeHtml(col.length > 25 ? col.slice(0, 25) + '..' : col) +
+      ' <span style="font-size:7px;color:#bbb">' + uniqueVals.length + '</span>';
+
+    const body = document.createElement('div');
+    body.className = 'filter-section-body';
+
+    header.addEventListener('click', () => body.classList.toggle('open'));
+
+    if (uniqueVals.length > 15) {
+      const search = document.createElement('input');
+      search.className = 'filter-search';
+      search.placeholder = 'Search...';
+      search.addEventListener('input', () => {
+        const q = search.value.toLowerCase();
+        body.querySelectorAll('label').forEach(lbl => {
+          lbl.style.display = lbl.textContent.toLowerCase().includes(q) ? '' : 'none';
+        });
+      });
+      body.appendChild(search);
+    }
+
+    uniqueVals.sort((a, b) => valueFreq[b] - valueFreq[a]).forEach(val => {
+      const lbl = document.createElement('label');
+      const cb = document.createElement('input');
+      cb.type = 'checkbox';
+      cb.dataset.col = col;
+      cb.dataset.val = val;
+      cb.addEventListener('change', onFilterChange);
+      lbl.appendChild(cb);
+      const display = val || '(empty)';
+      lbl.appendChild(document.createTextNode(
+        (display.length > 30 ? display.slice(0, 30) + '..' : display) + ' (' + valueFreq[val] + ')'
+      ));
+      body.appendChild(lbl);
+    });
+
+    section.appendChild(header);
+    section.appendChild(body);
+    filterList.appendChild(section);
+  });
+}
 
 // ─── Artifact Archive (hearted collection) ───
 let artifactArchive = JSON.parse(localStorage.getItem('artifactArchive') || '[]');
@@ -1040,7 +1246,7 @@ function makeLabel(text, color){
 const _floatDummy = new THREE.Object3D();
 function updateFloat(t) {
   const isSphere = layoutMode === 'sphere';
-  const spinAngle = isSphere && autoFly ? flyOffset * 0.3 : 0;
+  const spinAngle = isSphere && autoFly && !figure8Mode ? flyOffset * 0.3 : 0;
   const cosS = Math.cos(spinAngle), sinS = Math.sin(spinAngle);
 
   instanceGroups.forEach(g => {
@@ -1394,21 +1600,28 @@ function animate(){
     const theta = flyOffset * 0.15;
     const sinT = Math.sin(theta), cosT = Math.cos(theta);
     const denom = 1 + sinT * sinT;
-    const radius = layoutMode === 'sphere' ? 120 : 80;
-    const depth = layoutMode === 'sphere' ? 120 : 90;
-    const f8x = radius * cosT / denom;
-    const f8y = 15 * sinT * cosT / denom + 10;
-    const f8z = depth * sinT;
-    camera.position.lerp(new THREE.Vector3(f8x, f8y, f8z), 0.03);
-    // Look ahead on the curve
+    const radius = layoutMode === 'sphere' ? 160 : 80;
+    const depth = layoutMode === 'sphere' ? 160 : 90;
+    const yAmp = layoutMode === 'sphere' ? 40 : 15;
+    const yBase = layoutMode === 'sphere' ? 20 : 10;
+    // Path point on the lemniscate
+    const pathX = radius * cosT / denom;
+    const pathY = yAmp * sinT * cosT / denom + yBase;
+    const pathZ = depth * sinT;
+    // Look-ahead point
     const lt = theta + 0.15;
     const sinL = Math.sin(lt), cosL = Math.cos(lt);
     const denomL = 1 + sinL * sinL;
-    controls.target.lerp(new THREE.Vector3(
-      radius * cosL / denomL,
-      15 * sinL * cosL / denomL + 10,
-      depth * sinL
-    ), 0.03);
+    const lookX = radius * cosL / denomL;
+    const lookY = yAmp * sinL * cosL / denomL + yBase;
+    const lookZ = depth * sinL;
+    // Preserve user zoom: maintain distance between camera and target
+    const currentDist = camera.position.distanceTo(controls.target);
+    const pathTarget = new THREE.Vector3(lookX, lookY, lookZ);
+    const pathDir = new THREE.Vector3(lookX - pathX, lookY - pathY, lookZ - pathZ).normalize();
+    const pathOrigin = pathTarget.clone().sub(pathDir.multiplyScalar(currentDist));
+    camera.position.lerp(pathOrigin, 0.03);
+    controls.target.lerp(pathTarget, 0.03);
   }
 
   updateFloat(t);
@@ -1430,7 +1643,7 @@ function animate(){
   }
 
   // Rotate labels with sphere
-  if (layoutMode === 'sphere' && autoFly) {
+  if (layoutMode === 'sphere' && autoFly && !figure8Mode) {
     const spin = flyOffset * 0.3;
     const cs = Math.cos(spin), ss = Math.sin(spin);
     labelSprites.forEach(s => {
@@ -1449,7 +1662,13 @@ function loadData(text) {
   const { headers: h, rows: r } = isXML(text) ? parseXML(text) : parseCSV(text);
   if (!r.length) return;
   totalRows = r.length;
-  build(h, sample(r));
+  headers = h;
+  masterData = sample(r);
+  activeFilters = {};
+  activeSortCol = null;
+  activeSortDir = 'asc';
+  populateFilterPanel(h, masterData);
+  rebuildViz();
 }
 
 function handleFile(f) {
@@ -1496,7 +1715,11 @@ function handleFile(f) {
           if (!r.length) { showError('No records found in XML'); return; }
           setProgress(90);
           totalRows = r.length;
-          build(h, sample(r));
+          headers = h;
+          masterData = sample(r);
+          activeFilters = {}; activeSortCol = null; activeSortDir = 'asc';
+          populateFilterPanel(h, masterData);
+          rebuildViz();
           setProgress(100);
           status.textContent = `/// ${totalRows.toLocaleString()} tracks loaded ///`;
           hideProgress();
@@ -1522,7 +1745,11 @@ function handleFile(f) {
           if (!msg.rows.length) { showError('No rows found in CSV'); worker.terminate(); return; }
           totalRows = msg.totalRows;
           setProgress(90);
-          build(msg.headers, msg.rows);
+          headers = msg.headers;
+          masterData = msg.rows;
+          activeFilters = {}; activeSortCol = null; activeSortDir = 'asc';
+          populateFilterPanel(headers, masterData);
+          rebuildViz();
           setProgress(100);
           status.textContent = `/// ${totalRows.toLocaleString()} tracks loaded ///`;
           hideProgress();
@@ -1607,7 +1834,23 @@ async function loadDefaultLibrary() {
 
 // ─── Customize Panel ───
 function rebuildViz() {
-  if (headers.length && csvData.length) build(headers, csvData);
+  if (!headers.length || !masterData.length) return;
+  let filtered = applyFilters(masterData);
+  filtered = applySort(filtered);
+  csvData = filtered;
+  if (filtered.length === 0) {
+    instanceGroups.forEach(g => {
+      g.mesh.geometry.dispose(); g.mesh.material.dispose();
+      g.mesh.dispose(); scene.remove(g.mesh);
+    });
+    labelSprites.forEach(s => { s.material.map?.dispose(); s.material.dispose(); scene.remove(s); });
+    instanceGroups = []; labelSprites = []; pinnedInstance = null; selectedCard = null; unpinning = null;
+    document.getElementById('hud-sub').textContent = 'No matching artifacts';
+    updateFilterStatus();
+    return;
+  }
+  build(headers, csvData);
+  updateFilterStatus();
 }
 
 document.getElementById('ctrl-toggle').addEventListener('click', () => {
@@ -1706,6 +1949,31 @@ document.getElementById('t-figure8').addEventListener('click', function() {
 document.getElementById('t-wave').addEventListener('click', function() {
   this.classList.toggle('on');
   waveMode = this.classList.contains('on');
+});
+
+// ─── Filter/Sort Panel ───
+document.getElementById('filter-toggle').addEventListener('click', () => {
+  document.getElementById('filter-panel').classList.toggle('open');
+});
+document.getElementById('sort-col').addEventListener('change', (e) => {
+  activeSortCol = e.target.value || null;
+  rebuildViz();
+});
+document.getElementById('sort-dir').addEventListener('click', function() {
+  activeSortDir = activeSortDir === 'asc' ? 'desc' : 'asc';
+  this.textContent = activeSortDir.toUpperCase();
+  this.classList.toggle('on', activeSortDir === 'asc');
+  if (activeSortCol) rebuildViz();
+});
+document.getElementById('filter-clear').addEventListener('click', () => {
+  activeFilters = {};
+  activeSortCol = null;
+  activeSortDir = 'asc';
+  document.getElementById('sort-col').value = '';
+  document.getElementById('sort-dir').textContent = 'ASC';
+  document.getElementById('sort-dir').classList.add('on');
+  document.querySelectorAll('#filter-list input[type=checkbox]').forEach(cb => cb.checked = false);
+  rebuildViz();
 });
 
 // ─── WebGL detection ───
