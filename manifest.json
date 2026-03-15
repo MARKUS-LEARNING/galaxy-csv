@@ -1,0 +1,17 @@
+{
+  "name": "Galaxy Artifact",
+  "short_name": "Galaxy",
+  "description": "3D music library visualizer",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#ffffff",
+  "theme_color": "#222222",
+  "icons": [
+    {
+      "src": "screenshot.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any"
+    }
+  ]
+}
