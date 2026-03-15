@@ -14,9 +14,11 @@
         object-src 'none';
         base-uri 'self';
         form-action 'none';
+        frame-ancestors 'none';
       ">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=cover">
 <title>GALAXY ARTIFACT</title>
+<link rel="manifest" href="manifest.json">
 <style>
   @import url('https://fonts.googleapis.com/css2?family=Space+Mono:wght@400;700&display=swap');
   * { margin: 0; padding: 0; box-sizing: border-box; }
@@ -48,6 +50,87 @@
     line-height: 1.9; pointer-events: none;
   }
 
+  /* Navigation panel */
+  #nav-panel {
+    position: fixed; left: 20px; top: 50%; transform: translateY(-50%);
+    z-index: 12; display: flex; flex-direction: column; gap: 6px;
+    align-items: center;
+  }
+  #nav-panel .nav-group {
+    background: rgba(255,255,255,0.92); backdrop-filter: blur(12px);
+    border: 1px solid #eee; border-radius: 6px;
+    padding: 6px; display: flex; flex-direction: column;
+    align-items: center; gap: 2px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.05);
+  }
+  #nav-panel .nav-label {
+    font-size: 7px; letter-spacing: 2px; text-transform: uppercase;
+    color: #767676; margin-bottom: 2px; user-select: none;
+  }
+  #nav-panel .nav-row {
+    display: flex; gap: 2px; align-items: center;
+  }
+  #nav-panel .nav-btn {
+    width: 28px; height: 28px; border: 1px solid #e0e0e0;
+    border-radius: 4px; background: rgba(255,255,255,0.8);
+    color: #666; font-size: 12px; cursor: pointer;
+    display: flex; align-items: center; justify-content: center;
+    font-family: inherit; padding: 0;
+    transition: background 0.15s, border-color 0.15s, color 0.15s;
+    user-select: none; -webkit-user-select: none;
+    touch-action: none;
+  }
+  #nav-panel .nav-btn:hover { background: #f0f0f0; border-color: #bbb; color: #333; }
+  #nav-panel .nav-btn:active { background: #222; color: #fff; border-color: #222; }
+  #nav-panel .nav-btn.nav-home {
+    width: 100%; height: 24px; font-size: 7px;
+    letter-spacing: 2px; text-transform: uppercase;
+    border-radius: 4px;
+  }
+  #nav-panel .nav-spacer { width: 28px; height: 28px; }
+
+  /* Mobile hamburger menu */
+  #mobile-menu-btn {
+    display: none; position: fixed; bottom: 20px; right: 20px; z-index: 25;
+    width: 48px; height: 48px; border-radius: 50%;
+    background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
+    border: 1px solid #ddd; cursor: pointer;
+    font-size: 18px; color: #555;
+    box-shadow: 0 4px 16px rgba(0,0,0,0.12);
+    font-family: inherit;
+  }
+  #mobile-menu-btn:active { background: #222; color: #fff; border-color: #222; }
+  #mobile-menu {
+    display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
+    background: rgba(255,255,255,0.98); backdrop-filter: blur(16px);
+    border-top: 1px solid #eee; border-radius: 16px 16px 0 0;
+    max-height: 70vh; overflow-y: auto;
+    box-shadow: 0 -8px 32px rgba(0,0,0,0.12);
+    padding: env(safe-area-inset-bottom, 0px);
+    transform: translateY(100%); transition: transform 0.3s ease;
+  }
+  #mobile-menu.open { transform: translateY(0); }
+  #mobile-menu .mm-tabs {
+    display: flex; border-bottom: 1px solid #eee;
+    position: sticky; top: 0; background: rgba(255,255,255,0.98);
+    backdrop-filter: blur(16px); z-index: 1;
+  }
+  #mobile-menu .mm-tab {
+    flex: 1; padding: 14px 8px; font-family: inherit; font-size: 9px;
+    letter-spacing: 2px; text-transform: uppercase; color: #999;
+    background: none; border: none; cursor: pointer; text-align: center;
+  }
+  #mobile-menu .mm-tab.active { color: #222; border-bottom: 2px solid #222; }
+  #mobile-menu .mm-panel { display: none; padding: 14px 16px; }
+  #mobile-menu .mm-panel.active { display: block; }
+
+  /* Screen reader announcements */
+  #sr-announcer {
+    position: absolute; width: 1px; height: 1px;
+    overflow: hidden; clip: rect(0,0,0,0);
+    white-space: nowrap; border: 0;
+  }
+
   /* Album Card (replaces tooltip) */
   #album-card {
     position: fixed; z-index: 20;
@@ -61,7 +144,7 @@
   }
   #album-card .ac-close {
     position: absolute; top: 8px; right: 12px;
-    font-size: 18px; cursor: pointer; color: #999;
+    font-size: 18px; cursor: pointer; color: #767676;
     background: none; border: none; font-family: inherit;
     line-height: 1; padding: 2px 4px;
   }
@@ -139,7 +222,7 @@
     border: 1px solid #ddd; border-radius: 3px;
     color: #333; outline: none;
   }
-  #search-bar input::placeholder { color: #bbb; letter-spacing: 2px; font-size: 10px; }
+  #search-bar input::placeholder { color: #767676; letter-spacing: 2px; font-size: 10px; }
   #search-bar input:focus { border-color: #999; background: rgba(255,255,255,0.97); }
   #search-count {
     position: absolute; right: 8px; top: 50%; transform: translateY(-50%);
@@ -165,15 +248,15 @@
   .sr-item:hover { background: #f8f8f8; }
   .sr-item:last-child { border-bottom: none; }
   .sr-name { font-size: 11px; font-weight: 700; letter-spacing: 1px; color: #222; }
-  .sr-sub { font-size: 9px; letter-spacing: 1px; color: #888; margin-top: 2px; }
+  .sr-sub { font-size: 9px; letter-spacing: 1px; color: #666; margin-top: 2px; }
   .sr-match { background: rgba(231,76,60,0.12); padding: 0 2px; border-radius: 2px; }
   .sr-empty {
     padding: 16px 14px; text-align: center;
-    font-size: 9px; letter-spacing: 1px; color: #bbb;
+    font-size: 9px; letter-spacing: 1px; color: #767676;
   }
   .sr-hint {
     padding: 8px 14px; text-align: center;
-    font-size: 8px; letter-spacing: 1px; color: #ccc;
+    font-size: 8px; letter-spacing: 1px; color: #767676;
     border-top: 1px solid #f0f0f0;
   }
 
@@ -274,7 +357,7 @@
     border: 1px solid #eee; margin-bottom: 4px;
   }
   #filter-status {
-    font-size: 8px; letter-spacing: 1px; color: #999; margin-top: 6px;
+    font-size: 8px; letter-spacing: 1px; color: #767676; margin-top: 6px;
   }
 
   /* Upload prompt (bottom-left) */
@@ -396,6 +479,89 @@
     font-size: 9px; letter-spacing: 6px; color: #999; text-transform: uppercase;
   }
   #loading.hidden { display: none; }
+
+  /* ─── Safe Area Insets ─── */
+  #bottom-left { padding-bottom: env(safe-area-inset-bottom, 0px); padding-left: env(safe-area-inset-left, 0px); }
+  #hud { padding-top: env(safe-area-inset-top, 0px); padding-left: env(safe-area-inset-left, 0px); }
+
+  /* ─── Reduced Motion ─── */
+  @media (prefers-reduced-motion: reduce) {
+    .swoop-ghost, #album-card .ac-heart .heart-svg, #album-card .ac-heart.jumping .heart-svg { animation: none !important; transition: none !important; }
+    #artifact-bag .ab-body { transition: none; }
+    #mobile-menu { transition: none; }
+  }
+
+  /* ─── Tablet (769-1199px) ─── */
+  @media (max-width: 1199px) {
+    #search-bar input { width: 400px; }
+    #search-results { width: 420px; }
+  }
+
+  /* ─── Mobile (≤768px) ─── */
+  @media (max-width: 768px) {
+    /* Search bar: full-width */
+    #search-bar { left: 12px; right: 12px; transform: none; width: auto; }
+    #search-bar input { width: 100%; font-size: 14px; padding: 10px 60px 10px 14px; min-height: 44px; }
+    #search-bar input::placeholder { font-size: 12px; }
+    #search-count { font-size: 10px; right: 12px; }
+    #search-results { left: 12px; right: 12px; transform: none; width: auto; top: 62px; max-height: 50vh; }
+    .sr-item { padding: 12px 14px; min-height: 44px; }
+    .sr-name { font-size: 13px; }
+    .sr-sub { font-size: 11px; }
+
+    /* Album card: bottom sheet */
+    #album-card {
+      position: fixed !important; left: 0 !important; right: 0 !important;
+      bottom: 0 !important; top: auto !important;
+      max-width: none; width: 100%;
+      border-radius: 16px 16px 0 0; max-height: 50vh;
+      overflow-y: auto; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+    #album-card .ac-name { font-size: 16px; }
+    #album-card .ac-sub { font-size: 13px; }
+    #album-card .ac-genre { font-size: 12px; }
+    #album-card .ac-link { padding: 10px 16px; font-size: 11px; min-height: 44px; display: inline-flex; align-items: center; }
+    #album-card .ac-close { font-size: 22px; padding: 8px 12px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+    #album-card .ac-heart { padding: 8px; min-width: 44px; min-height: 44px; display: flex; align-items: center; justify-content: center; }
+
+    /* HUD */
+    #hud h1 { font-size: 10px; }
+    #hud .sub { font-size: 9px; }
+
+    /* Nav panel: hidden on mobile */
+    #nav-panel { display: none; }
+
+    /* Customize/Filter buttons: hidden on mobile (use hamburger) */
+    #ctrl-toggle, #filter-toggle { display: none; }
+
+    /* Panels: full-screen overlays */
+    #ctrl-panel, #filter-panel {
+      position: fixed; top: 0; left: 0; right: 0; bottom: 0;
+      width: 100%; max-height: 100vh; z-index: 30;
+      border-radius: 0; padding: 60px 16px 16px;
+      padding-bottom: calc(16px + env(safe-area-inset-bottom, 0px));
+    }
+
+    /* Bottom-left area */
+    #bottom-left { left: 12px; bottom: 12px; right: 12px; }
+    #artifact-bag { width: 100%; }
+    #info { font-size: 10px; }
+    #upload-bar .ub-link { font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
+
+    /* Hamburger menu visible */
+    #mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
+    #mobile-menu { display: block; }
+
+    /* Touch targets */
+    #ctrl-panel .chip, #filter-panel .chip, #mobile-menu .chip { min-height: 36px; min-width: 36px; padding: 8px 12px; font-size: 9px; }
+    .filter-section-header { min-height: 44px; font-size: 10px; display: flex; align-items: center; }
+    .filter-section-body label { min-height: 36px; font-size: 11px !important; }
+
+    /* Font size minimums */
+    #info { font-size: 10px; }
+    #filter-status { font-size: 10px; }
+    #ctrl-panel label, #filter-panel label { font-size: 9px; }
+  }
 </style>
 </head>
 <body>
@@ -418,13 +584,13 @@
         <div class="ab-empty" id="ab-empty">Heart artifacts to build your archive</div>
       </div>
       <div class="ab-footer">
-        <button class="ab-export" id="ab-export" title="Export collection">Export</button>
+        <button class="ab-export" id="ab-export" title="Export collection" aria-label="Export artifact archive">Export</button>
       </div>
     </div>
   </div>
   <div id="info"></div>
   <div id="upload-bar">
-    <button class="ub-link" id="upload-btn">Upload your own CSV or XML</button>
+    <button class="ub-link" id="upload-btn" aria-label="Upload your own CSV or XML file">Upload your own CSV or XML</button>
     <input type="file" id="file-input" accept=".csv,.tsv,.txt,.xml,text/*,application/xml">
     <div class="ub-status" id="upload-status"></div>
     <div class="ub-progress" id="upload-progress"><div class="ub-progress-fill" id="upload-progress-fill"></div></div>
@@ -432,12 +598,48 @@
 </div>
 
 <div id="search-bar" style="position:relative;">
-  <input type="text" id="search-input" placeholder="Search artifacts..." autocomplete="off" style="padding-right:60px;">
+  <input type="text" id="search-input" placeholder="Search artifacts..." autocomplete="off" style="padding-right:60px;" role="combobox" aria-expanded="false" aria-controls="search-results" aria-label="Search artifacts">
   <span id="search-count"></span>
 </div>
-<div id="search-results"></div>
+<div id="search-results" role="listbox"></div>
 
-<button id="ctrl-toggle">Customize</button>
+<div id="nav-panel">
+  <div class="nav-group">
+    <div class="nav-label">Move</div>
+    <div class="nav-row">
+      <div class="nav-spacer"></div>
+      <button class="nav-btn" data-dir="fwd" title="Forward (W)" aria-label="Move forward">&#9650;</button>
+      <div class="nav-spacer"></div>
+    </div>
+    <div class="nav-row">
+      <button class="nav-btn" data-dir="left" title="Left (A)" aria-label="Move left">&#9664;</button>
+      <button class="nav-btn" data-dir="back" title="Back (S)" aria-label="Move backward">&#9660;</button>
+      <button class="nav-btn" data-dir="right" title="Right (D)" aria-label="Move right">&#9654;</button>
+    </div>
+  </div>
+  <div class="nav-group">
+    <div class="nav-label">Height</div>
+    <div class="nav-row">
+      <button class="nav-btn" data-dir="up" title="Up (Q)" aria-label="Move up">&#8593;</button>
+      <button class="nav-btn" data-dir="down" title="Down (E)" aria-label="Move down">&#8595;</button>
+    </div>
+  </div>
+  <div class="nav-group">
+    <button class="nav-btn nav-home" id="nav-home" title="Reset camera" aria-label="Reset camera view">Reset</button>
+  </div>
+</div>
+
+<button id="mobile-menu-btn" aria-label="Open menu" aria-expanded="false">&#9776;</button>
+<div id="mobile-menu" role="dialog" aria-label="Settings menu">
+  <div class="mm-tabs" role="tablist">
+    <button class="mm-tab active" data-panel="mm-customize" role="tab" aria-selected="true">Customize</button>
+    <button class="mm-tab" data-panel="mm-filter" role="tab" aria-selected="false">Filter</button>
+  </div>
+  <div class="mm-panel active" id="mm-customize" role="tabpanel"></div>
+  <div class="mm-panel" id="mm-filter" role="tabpanel"></div>
+</div>
+
+<button id="ctrl-toggle" aria-label="Toggle customize panel" aria-expanded="false">Customize</button>
 <div id="ctrl-panel">
   <label>Layout</label>
   <div class="row" id="layout-row"></div>
@@ -466,7 +668,7 @@
   </div>
 </div>
 
-<button id="filter-toggle">Filter / Sort</button>
+<button id="filter-toggle" aria-label="Toggle filter and sort panel" aria-expanded="false">Filter / Sort</button>
 <div id="filter-panel">
   <label>Sort by</label>
   <div class="row">
@@ -483,13 +685,13 @@
   <div id="filter-status"></div>
 </div>
 
-<div id="album-card">
-  <button class="ac-heart" title="Add to Artifact Archive">
+<div id="album-card" role="dialog" aria-label="Album details">
+  <button class="ac-heart" title="Add to Artifact Archive" aria-label="Add to Artifact Archive">
     <svg class="heart-svg" viewBox="0 0 24 24" width="20" height="20">
       <path class="heart-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
     </svg>
   </button>
-  <button class="ac-close">&times;</button>
+  <button class="ac-close" aria-label="Close album card">&times;</button>
   <div class="ac-name"></div>
   <div class="ac-sub"></div>
   <div class="ac-genre"></div>
@@ -503,7 +705,8 @@
   </div>
 </div>
 
-<div id="loading">/// Loading library... ///</div>
+<div id="sr-announcer" role="status" aria-live="polite"></div>
+<div id="loading" role="status" aria-live="polite">/// Loading library... ///</div>
 
 <script type="importmap">
 { "imports": {
@@ -578,6 +781,12 @@ const GEOMETRIES = [
   () => new THREE.LatheGeometry([new THREE.Vector2(0,0),new THREE.Vector2(0.25,0.1),new THREE.Vector2(0.3,0.25),new THREE.Vector2(0.15,0.45),new THREE.Vector2(0.2,0.5)], 8),
 ];
 const NUM_SHAPES = GEOMETRIES.length;
+// Geometry cache — shapes don't change, only positions (Phase 5a)
+const _geomCache = new Array(NUM_SHAPES);
+function getCachedGeometry(idx) {
+  if (!_geomCache[idx]) _geomCache[idx] = GEOMETRIES[idx]();
+  return _geomCache[idx];
+}
 
 const FLY_DEPTH = 200;
 
@@ -722,7 +931,17 @@ function populateFilterPanel(hdrs, rows) {
 }
 
 // ─── Artifact Archive (hearted collection) ───
-let artifactArchive = JSON.parse(localStorage.getItem('artifactArchive') || '[]');
+let artifactArchive = loadArtifactArchive();
+function loadArtifactArchive() {
+  try {
+    const raw = localStorage.getItem('artifactArchive');
+    if (!raw) return [];
+    const parsed = JSON.parse(raw);
+    if (!Array.isArray(parsed)) return [];
+    // Cap at 10K entries and validate shape
+    return parsed.slice(0, 10000).filter(a => a && typeof a === 'object' && typeof a.key === 'string');
+  } catch { return []; }
+}
 
 function getArtifactKey(entry) {
   const r = entry.row;
@@ -1037,6 +1256,21 @@ function findCol(hdrs, kws) {
     || hdrs.find(h => kws.some(k => h.toLowerCase().includes(k)));
 }
 
+// ─── Mobile detection ───
+const isMobile = () => window.innerWidth <= 768;
+const prefersReducedMotion = window.matchMedia('(prefers-reduced-motion: reduce)').matches;
+
+// ─── Screen reader announcer ───
+function announce(msg) {
+  const el = document.getElementById('sr-announcer');
+  if (el) { el.textContent = ''; requestAnimationFrame(() => { el.textContent = msg; }); }
+}
+
+// ─── Pre-allocated Vector3s (Phase 5c) ───
+const _tmpVec3A = new THREE.Vector3();
+const _tmpVec3B = new THREE.Vector3();
+const _tmpVec3C = new THREE.Vector3();
+
 // ─── Scene ───
 function initScene(){
   scene=new THREE.Scene();
@@ -1060,10 +1294,34 @@ function initScene(){
   scene.add(new THREE.AmbientLight(0xffffff,1.0));
   const d=new THREE.DirectionalLight(0xffffff,0.6);d.position.set(50,80,50);scene.add(d);
   raycaster=new THREE.Raycaster();clock=new THREE.Clock();
-  window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
+  // ResizeObserver for smooth resize handling (avoids iOS Safari address bar jank)
+  if (typeof ResizeObserver !== 'undefined') {
+    const ro = new ResizeObserver(() => {
+      camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();
+      renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight);
+    });
+    ro.observe(document.body);
+  } else {
+    window.addEventListener('resize',()=>{camera.aspect=innerWidth/innerHeight;camera.updateProjectionMatrix();renderer.setSize(innerWidth,innerHeight);composer.setSize(innerWidth,innerHeight)});
+  }
+  renderer.domElement.setAttribute('role', 'application');
+  renderer.domElement.setAttribute('aria-label', 'Galaxy Artifact 3D visualization');
   renderer.domElement.addEventListener('click',onClick);
-  renderer.domElement.addEventListener('mousemove',onCursorHint);
+  renderer.domElement.addEventListener('pointermove',onCursorHint);
   window.addEventListener('keydown',onKey);window.addEventListener('keyup',onKeyUp);
+
+  // Mobile performance defaults (Phase 5d)
+  if (isMobile()) {
+    bloomPass.strength = 0;
+    document.getElementById('r-bloom').value = '0';
+  }
+  // Reduced motion defaults (Phase 4c)
+  if (prefersReducedMotion) {
+    autoFly = false;
+    waveMode = false;
+    document.getElementById('t-autofly')?.classList.remove('on');
+    document.getElementById('t-wave')?.classList.remove('on');
+  }
 }
 
 // ─── Build ───
@@ -1125,8 +1383,9 @@ function build(hdrs, rows){
 
   // ─── Clear old ───
   instanceGroups.forEach(g => {
-    g.mesh.geometry.dispose(); g.mesh.material.dispose();
-    g.mesh.dispose(); // release InstancedMesh internal buffers
+    // Don't dispose cached geometry — only material and InstancedMesh buffers
+    g.mesh.material.dispose();
+    g.mesh.dispose();
     scene.remove(g.mesh);
     g.data = null;
   });
@@ -1161,7 +1420,7 @@ function build(hdrs, rows){
       transparent: false, opacity: 1.0,
     });
 
-    const geom = GEOMETRIES[shapeIdx]();
+    const geom = getCachedGeometry(shapeIdx);
     const im = new THREE.InstancedMesh(geom, mat, items.length);
     im.userData.groupIdx = groupCounter;
     im.userData.bucket = bucket;
@@ -1471,7 +1730,7 @@ function build(hdrs, rows){
     : [
         yearCol ? `\u2190 ${minYear} \u2500\u2500\u2500 ${yearCol} \u2500\u2500\u2500 ${maxYear} \u2192` : '',
         genreCol ? `\u2195 ${genreCol} (top ${topGenres.length})` : '',
-        'scroll zoom \u00b7 drag orbit \u00b7 arrows fly \u00b7 click to inspect',
+        'scroll zoom \u00b7 drag orbit \u00b7 click to inspect',
       ].filter(Boolean);
   infoLines.forEach((line, i) => {
     if (i > 0) infoEl.appendChild(document.createElement('br'));
@@ -1561,10 +1820,9 @@ function updateFloat(t) {
 
       if (isPinned) {
         // Recompute target each frame so artifact stays centered in front of camera
-        const dir = new THREE.Vector3();
-        camera.getWorldDirection(dir);
-        const right = new THREE.Vector3().crossVectors(dir, camera.up).normalize();
-        const targetPos = camera.position.clone().add(dir.clone().multiplyScalar(12)).add(right.multiplyScalar(-2));
+        camera.getWorldDirection(_tmpVec3A);
+        _tmpVec3B.crossVectors(_tmpVec3A, camera.up).normalize();
+        _tmpVec3C.copy(camera.position).add(_tmpVec3A.multiplyScalar(12)).add(_tmpVec3B.multiplyScalar(-2));
 
         // Smooth swoop: lerp from origin to target over ~0.6 seconds
         const elapsed = t - pinnedInstance.pinTime;
@@ -1572,24 +1830,22 @@ function updateFloat(t) {
         // Ease-out cubic for graceful deceleration
         const ease = 1 - Math.pow(1 - progress, 3);
 
-        let currentPos;
         if (progress >= 1.0) {
-          // Settled — lock to camera-relative position
-          currentPos = targetPos;
+          _floatDummy.position.copy(_tmpVec3C);
         } else {
-          currentPos = new THREE.Vector3().lerpVectors(pinnedInstance.originPos, targetPos, ease);
+          _floatDummy.position.lerpVectors(pinnedInstance.originPos, _tmpVec3C, ease);
         }
         const baseS = d.baseScale * scaleMul;
         const targetS = d.baseScale * 5.0 * scaleMul;
         const ps = baseS + (targetS - baseS) * ease;
 
-        _floatDummy.position.copy(currentPos);
         _floatDummy.scale.set(ps, ps, ps);
         _floatDummy.rotation.set(t * 0.4, t * 0.6, t * 0.2);
         _floatDummy.updateMatrix();
         g.mesh.setMatrixAt(li, _floatDummy.matrix);
-        // Store world position for card placement
-        pinnedInstance.worldPos = currentPos;
+        // Store world position for card placement (must clone since _floatDummy.position is reused)
+        if (!pinnedInstance.worldPos) pinnedInstance.worldPos = new THREE.Vector3();
+        pinnedInstance.worldPos.copy(_floatDummy.position);
         pinnedInstance.settled = progress >= 1.0;
       } else if (isUnpinning) {
         // Graceful return: lerp from pinned position back to natural position
@@ -1630,18 +1886,67 @@ function updateFloat(t) {
 
 // ─── Fly ───
 const keys={};
-function onKey(e){const t=e.target.tagName;if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d'].includes(e.key)){e.preventDefault();keys[e.key]=true}}
+function onKey(e){
+  const t=e.target.tagName;if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;
+  // Escape closes any open panel/card (Phase 4b)
+  if(e.key==='Escape'){
+    e.preventDefault();
+    if(document.getElementById('album-card').style.display==='block'){unpinInstance();return}
+    const mm=document.getElementById('mobile-menu');
+    if(mm&&mm.classList.contains('open')){mm.classList.remove('open');document.getElementById('mobile-menu-btn').setAttribute('aria-expanded','false');return}
+    if(document.getElementById('ctrl-panel').classList.contains('open')){document.getElementById('ctrl-panel').classList.remove('open');document.getElementById('ctrl-toggle').setAttribute('aria-expanded','false');return}
+    if(document.getElementById('filter-panel').classList.contains('open')){document.getElementById('filter-panel').classList.remove('open');document.getElementById('filter-toggle').setAttribute('aria-expanded','false');return}
+    if(document.getElementById('search-results').classList.contains('open')){document.getElementById('search-results').classList.remove('open');document.getElementById('search-input').setAttribute('aria-expanded','false');return}
+    return;
+  }
+  if(['ArrowUp','ArrowDown','ArrowLeft','ArrowRight','w','a','s','d','q','e'].includes(e.key)){e.preventDefault();keys[e.key]=true}
+}
 function onKeyUp(e){const t=e.target.tagName;if(t==='INPUT'||t==='SELECT'||t==='TEXTAREA')return;keys[e.key]=false}
+// Pre-allocated vectors for fly() (Phase 5c)
+const _flyFwd = new THREE.Vector3();
+const _flyRt = new THREE.Vector3();
+const _flyUp = new THREE.Vector3(0, 1, 0);
 function fly(){
   if (figure8Mode && autoFly) return;
   const sp=flySpeed;
-  const fwd=new THREE.Vector3();camera.getWorldDirection(fwd);fwd.y=0;fwd.normalize();
-  const rt=new THREE.Vector3().crossVectors(fwd,camera.up).normalize();
-  if(keys.ArrowUp||keys.w){camera.position.addScaledVector(fwd,sp);controls.target.addScaledVector(fwd,sp)}
-  if(keys.ArrowDown||keys.s){camera.position.addScaledVector(fwd,-sp);controls.target.addScaledVector(fwd,-sp)}
-  if(keys.ArrowLeft||keys.a){camera.position.addScaledVector(rt,-sp);controls.target.addScaledVector(rt,-sp)}
-  if(keys.ArrowRight||keys.d){camera.position.addScaledVector(rt,sp);controls.target.addScaledVector(rt,sp)}
+  camera.getWorldDirection(_flyFwd);_flyFwd.y=0;_flyFwd.normalize();
+  _flyRt.crossVectors(_flyFwd,camera.up).normalize();
+  if(keys.ArrowUp||keys.w){camera.position.addScaledVector(_flyFwd,sp);controls.target.addScaledVector(_flyFwd,sp)}
+  if(keys.ArrowDown||keys.s){camera.position.addScaledVector(_flyFwd,-sp);controls.target.addScaledVector(_flyFwd,-sp)}
+  if(keys.ArrowLeft||keys.a){camera.position.addScaledVector(_flyRt,-sp);controls.target.addScaledVector(_flyRt,-sp)}
+  if(keys.ArrowRight||keys.d){camera.position.addScaledVector(_flyRt,sp);controls.target.addScaledVector(_flyRt,sp)}
+  if(keys.q){camera.position.addScaledVector(_flyUp,sp);controls.target.addScaledVector(_flyUp,sp)}
+  if(keys.e){camera.position.addScaledVector(_flyUp,-sp);controls.target.addScaledVector(_flyUp,-sp)}
 }
+
+// ─── Navigation Panel (Pointer Events for mobile support) ───
+let _navInterval = null;
+document.getElementById('nav-panel').addEventListener('pointerdown', (e) => {
+  const btn = e.target.closest('.nav-btn[data-dir]');
+  if (!btn) return;
+  e.preventDefault();
+  const dir = btn.dataset.dir;
+  const move = () => {
+    if (figure8Mode && autoFly) return;
+    const sp = flySpeed;
+    camera.getWorldDirection(_flyFwd); _flyFwd.y = 0; _flyFwd.normalize();
+    _flyRt.crossVectors(_flyFwd, camera.up).normalize();
+    if (dir === 'fwd') { camera.position.addScaledVector(_flyFwd, sp); controls.target.addScaledVector(_flyFwd, sp); }
+    if (dir === 'back') { camera.position.addScaledVector(_flyFwd, -sp); controls.target.addScaledVector(_flyFwd, -sp); }
+    if (dir === 'left') { camera.position.addScaledVector(_flyRt, -sp); controls.target.addScaledVector(_flyRt, -sp); }
+    if (dir === 'right') { camera.position.addScaledVector(_flyRt, sp); controls.target.addScaledVector(_flyRt, sp); }
+    if (dir === 'up') { camera.position.addScaledVector(_flyUp, sp); controls.target.addScaledVector(_flyUp, sp); }
+    if (dir === 'down') { camera.position.addScaledVector(_flyUp, -sp); controls.target.addScaledVector(_flyUp, -sp); }
+  };
+  move();
+  _navInterval = setInterval(move, 50);
+});
+document.addEventListener('pointerup', () => { clearInterval(_navInterval); _navInterval = null; });
+document.addEventListener('pointercancel', () => { clearInterval(_navInterval); _navInterval = null; });
+
+document.getElementById('nav-home').addEventListener('click', () => {
+  if (headers.length && masterData.length) rebuildViz();
+});
 
 // ─── Click (Album Card + Pin) ───
 function unpinInstance() {
@@ -1737,12 +2042,22 @@ function onClick(e) {
 }
 
 // ─── Cursor hint (pointer on hoverable orbs) ───
+let _cursorHintPending = false;
 function onCursorHint(e) {
+  // Skip hover hints for touch input
+  if (e.pointerType === 'touch') return;
   mouse.x = (e.clientX / innerWidth) * 2 - 1;
   mouse.y = -(e.clientY / innerHeight) * 2 + 1;
-  raycaster.setFromCamera(mouse, camera);
-  const hits = raycaster.intersectObjects(instanceGroups.map(g => g.mesh));
-  renderer.domElement.style.cursor = hits.length ? 'pointer' : '';
+  // Throttle raycasting to once per frame (Phase 5b)
+  if (!_cursorHintPending) {
+    _cursorHintPending = true;
+    requestAnimationFrame(() => {
+      raycaster.setFromCamera(mouse, camera);
+      const hits = raycaster.intersectObjects(instanceGroups.map(g => g.mesh));
+      renderer.domElement.style.cursor = hits.length ? 'pointer' : '';
+      _cursorHintPending = false;
+    });
+  }
 }
 
 // ─── Close card ───
@@ -1884,18 +2199,26 @@ function animate(){
 
   // Keep pinned card next to pinned artifact on screen
   if (pinnedInstance && pinnedInstance.worldPos) {
-    const projected = pinnedInstance.worldPos.clone().project(camera);
-    const sx = (projected.x * 0.5 + 0.5) * innerWidth;
-    const sy = (-projected.y * 0.5 + 0.5) * innerHeight;
     const card = document.getElementById('album-card');
     // Fade card in after swoop completes
     const elapsed = t - pinnedInstance.pinTime;
     const cardFade = Math.min(Math.max((elapsed - 0.3) / 0.3, 0), 1);
     card.style.opacity = cardFade;
-    // Place card to the right of the artifact with healthy spacing
-    card.style.left = Math.min(Math.max(sx + 80, 10), innerWidth - 400) + 'px';
-    card.style.top = Math.min(Math.max(sy - 80, 10), innerHeight - 200) + 'px';
-    card.style.bottom = 'auto';
+
+    if (isMobile()) {
+      // Mobile: bottom sheet position (CSS handles layout)
+      card.style.left = '';
+      card.style.top = '';
+      card.style.bottom = '';
+    } else {
+      // Desktop: floating near the 3D object
+      const projected = pinnedInstance.worldPos.clone().project(camera);
+      const sx = (projected.x * 0.5 + 0.5) * innerWidth;
+      const sy = (-projected.y * 0.5 + 0.5) * innerHeight;
+      card.style.left = Math.min(Math.max(sx + 80, 10), innerWidth - 400) + 'px';
+      card.style.top = Math.min(Math.max(sy - 80, 10), innerHeight - 200) + 'px';
+      card.style.bottom = 'auto';
+    }
   }
 
   // Rotate labels with radial layouts
@@ -1926,6 +2249,7 @@ function loadData(text) {
   activeSortDir = 'asc';
   populateFilterPanel(h, masterData);
   rebuildViz();
+  announce(totalRows.toLocaleString() + ' tracks loaded');
 }
 
 function handleFile(f) {
@@ -2104,7 +2428,7 @@ function rebuildViz() {
   csvData = filtered;
   if (filtered.length === 0) {
     instanceGroups.forEach(g => {
-      g.mesh.geometry.dispose(); g.mesh.material.dispose();
+      g.mesh.material.dispose();
       g.mesh.dispose(); scene.remove(g.mesh);
     });
     labelSprites.forEach(s => { s.material.map?.dispose(); s.material.dispose(); scene.remove(s); });
@@ -2118,7 +2442,9 @@ function rebuildViz() {
 }
 
 document.getElementById('ctrl-toggle').addEventListener('click', () => {
-  document.getElementById('ctrl-panel').classList.toggle('open');
+  const panel = document.getElementById('ctrl-panel');
+  panel.classList.toggle('open');
+  document.getElementById('ctrl-toggle').setAttribute('aria-expanded', panel.classList.contains('open'));
 });
 
 // Layout chips
@@ -2217,7 +2543,9 @@ document.getElementById('t-wave').addEventListener('click', function() {
 
 // ─── Filter/Sort Panel ───
 document.getElementById('filter-toggle').addEventListener('click', () => {
-  document.getElementById('filter-panel').classList.toggle('open');
+  const panel = document.getElementById('filter-panel');
+  panel.classList.toggle('open');
+  document.getElementById('filter-toggle').setAttribute('aria-expanded', panel.classList.contains('open'));
 });
 document.getElementById('sort-col').addEventListener('change', (e) => {
   activeSortCol = e.target.value || null;
@@ -2253,6 +2581,7 @@ function searchArtifacts(query) {
     searchResults.innerHTML = '';
     searchCount.textContent = '';
     searchCount.classList.remove('visible');
+    searchInput.setAttribute('aria-expanded', 'false');
     return;
   }
   const q = query.toLowerCase();
@@ -2279,9 +2608,14 @@ function searchArtifacts(query) {
 
   searchResults.innerHTML = '';
   if (matches.length === 0) {
-    searchResults.innerHTML = '<div class="sr-empty">No artifacts found</div>';
+    const empty = document.createElement('div');
+    empty.className = 'sr-empty';
+    empty.textContent = 'No artifacts found';
+    searchResults.appendChild(empty);
     searchCount.textContent = 'no matches';
     searchResults.classList.add('open');
+    searchInput.setAttribute('aria-expanded', 'true');
+    announce('No search results found');
     return;
   }
 
@@ -2298,26 +2632,50 @@ function searchArtifacts(query) {
     const album = (albumCol && m.row[albumCol]) || '';
     const sub = [artist, album].filter(Boolean).join(' \u00b7 ');
 
-    item.innerHTML =
-      '<div class="sr-name">' + highlightMatch(escapeHtml(name), q) + '</div>' +
-      (sub ? '<div class="sr-sub">' + highlightMatch(escapeHtml(sub), q) + '</div>' : '');
+    const nameDiv = document.createElement('div');
+    nameDiv.className = 'sr-name';
+    nameDiv.appendChild(highlightMatch(name, q));
+    item.appendChild(nameDiv);
+    if (sub) {
+      const subDiv = document.createElement('div');
+      subDiv.className = 'sr-sub';
+      subDiv.appendChild(highlightMatch(sub, q));
+      item.appendChild(subDiv);
+    }
 
     item.addEventListener('click', () => {
       searchResults.classList.remove('open');
       pinArtifactByRow(m.row);
     });
 
+    item.setAttribute('role', 'option');
     searchResults.appendChild(item);
   });
 
-  searchResults.innerHTML += '<div class="sr-hint">' + matches.length + ' result' + (matches.length !== 1 ? 's' : '') + '</div>';
+  const hint = document.createElement('div');
+  hint.className = 'sr-hint';
+  hint.textContent = matches.length + ' result' + (matches.length !== 1 ? 's' : '');
+  searchResults.appendChild(hint);
   searchResults.classList.add('open');
+  searchInput.setAttribute('aria-expanded', 'true');
+  announce(matches.length + ' search result' + (matches.length !== 1 ? 's' : '') + ' found');
 }
 
-function highlightMatch(html, query) {
-  const idx = html.toLowerCase().indexOf(query);
-  if (idx === -1) return html;
-  return html.slice(0, idx) + '<span class="sr-match">' + html.slice(idx, idx + query.length) + '</span>' + html.slice(idx + query.length);
+function highlightMatch(text, query) {
+  // DOM-based approach to prevent XSS (Phase 2a)
+  const container = document.createDocumentFragment();
+  const idx = text.toLowerCase().indexOf(query.toLowerCase());
+  if (idx === -1) {
+    container.appendChild(document.createTextNode(text));
+  } else {
+    if (idx > 0) container.appendChild(document.createTextNode(text.slice(0, idx)));
+    const mark = document.createElement('span');
+    mark.className = 'sr-match';
+    mark.textContent = text.slice(idx, idx + query.length);
+    container.appendChild(mark);
+    if (idx + query.length < text.length) container.appendChild(document.createTextNode(text.slice(idx + query.length)));
+  }
+  return container;
 }
 
 function pinArtifactByRow(targetRow) {
@@ -2388,8 +2746,60 @@ searchInput.addEventListener('focus', () => {
 document.addEventListener('click', (e) => {
   if (!e.target.closest('#search-bar') && !e.target.closest('#search-results')) {
     searchResults.classList.remove('open');
+    searchInput.setAttribute('aria-expanded', 'false');
   }
 });
+
+// ─── Mobile Menu ───
+const mobileMenuBtn = document.getElementById('mobile-menu-btn');
+const mobileMenu = document.getElementById('mobile-menu');
+if (mobileMenuBtn && mobileMenu) {
+  let _mobileMenuPopulated = false;
+  mobileMenuBtn.addEventListener('click', () => {
+    const isOpen = mobileMenu.classList.toggle('open');
+    mobileMenuBtn.setAttribute('aria-expanded', isOpen);
+    mobileMenuBtn.textContent = isOpen ? '\u2715' : '\u2630';
+    // Reparent panel content between desktop panels and mobile menu
+    if (isOpen && !_mobileMenuPopulated) {
+      populateMobileMenu();
+      _mobileMenuPopulated = true;
+    } else if (!isOpen && _mobileMenuPopulated) {
+      restoreDesktopPanels();
+      _mobileMenuPopulated = false;
+    }
+  });
+
+  // Tab switching
+  mobileMenu.querySelectorAll('.mm-tab').forEach(tab => {
+    tab.addEventListener('click', () => {
+      mobileMenu.querySelectorAll('.mm-tab').forEach(t => { t.classList.remove('active'); t.setAttribute('aria-selected', 'false'); });
+      mobileMenu.querySelectorAll('.mm-panel').forEach(p => p.classList.remove('active'));
+      tab.classList.add('active');
+      tab.setAttribute('aria-selected', 'true');
+      document.getElementById(tab.dataset.panel).classList.add('active');
+    });
+  });
+
+  // Move desktop panel content into mobile menu when opened on mobile
+  function populateMobileMenu() {
+    const mmCustomize = document.getElementById('mm-customize');
+    const mmFilter = document.getElementById('mm-filter');
+    if (!mmCustomize || !mmFilter) return;
+    const ctrlPanel = document.getElementById('ctrl-panel');
+    const filterPanel = document.getElementById('filter-panel');
+    // Reparent children into mobile panels (avoids duplicate IDs)
+    while (ctrlPanel.firstChild) mmCustomize.appendChild(ctrlPanel.firstChild);
+    while (filterPanel.firstChild) mmFilter.appendChild(filterPanel.firstChild);
+  }
+  function restoreDesktopPanels() {
+    const mmCustomize = document.getElementById('mm-customize');
+    const mmFilter = document.getElementById('mm-filter');
+    const ctrlPanel = document.getElementById('ctrl-panel');
+    const filterPanel = document.getElementById('filter-panel');
+    while (mmCustomize.firstChild) ctrlPanel.appendChild(mmCustomize.firstChild);
+    while (mmFilter.firstChild) filterPanel.appendChild(mmFilter.firstChild);
+  }
+}
 
 // ─── WebGL detection ───
 function checkWebGL() {
@@ -2403,6 +2813,11 @@ function checkWebGL() {
 }
 
 if (checkWebGL()) { initScene(); animate(); loadDefaultLibrary(); }
+
+// ─── Service Worker registration ───
+if ('serviceWorker' in navigator) {
+  navigator.serviceWorker.register('sw.js').catch(() => {});
+}
 </script>
 </body>
 </html>
