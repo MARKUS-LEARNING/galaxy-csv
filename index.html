@@ -638,7 +638,7 @@
   <label>Object Scale</label>
   <input type="range" id="r-scale" min="0.2" max="3" step="0.1" value="1">
   <label>Fly Speed</label>
-  <input type="range" id="r-speed" min="0.001" max="8" step="0.001" value="0.8">
+  <input type="range" id="r-speed" min="-2" max="2" step="0.01" value="0.15">
   <label>Fog</label>
   <input type="range" id="r-fog" min="0" max="0.008" step="0.0002" value="0.0004">
   <hr>
@@ -777,7 +777,7 @@ let instanceGroups = [], allData = [], labelSprites = [];
 let headers = [], csvData = [], colorMap = {};
 let raycaster, mouse = new THREE.Vector2(-99,-99);
 let totalRows = 0;
-let flySpeed = 0.8;
+let flySpeed = 0.15;
 let showLabels = true;
 let scaleMul = 1.0;
 let flyOffset = 0;
@@ -1758,7 +1758,7 @@ function updateFloat(t) {
 
       // Wave physics displacement
       if (waveMode) {
-        const omega = Math.min(flySpeed * 2.0, 6.0);
+        const omega = Math.min(Math.abs(flySpeed) * 2.0, 6.0);
         const waveK = 0.08;
         const dist = Math.sqrt(d.basePos.x * d.basePos.x + d.basePos.z * d.basePos.z);
         // Standing wave along X
@@ -1767,7 +1767,7 @@ function updateFloat(t) {
         // Radial ripple from center
         const ripple = Math.sin(waveK * dist - omega * t + d.phase);
         // Transverse displacement (Y)
-        const waveAmp = d.amp * flySpeed * 1.5;
+        const waveAmp = d.amp * Math.abs(flySpeed) * 1.5;
         py += (standing * 0.4 + ripple * 0.6) * waveAmp;
         // Longitudinal displacement (X/Z)
         const longAmp = waveAmp * 0.2;
@@ -1835,7 +1835,7 @@ function updateFloat(t) {
         _floatDummy.position.set(px, py, pz);
         _floatDummy.scale.set(s, s, s);
         if (waveMode) {
-          const wRot = Math.sin(t * flySpeed + d.phase) * 0.5;
+          const wRot = Math.sin(t * Math.abs(flySpeed) + d.phase) * 0.5;
           _floatDummy.rotation.set(wRot, t * 0.15 + d.phase, wRot * 0.3);
         } else {
           _floatDummy.rotation.set(0, t * 0.15 + d.phase, 0);
@@ -1873,7 +1873,7 @@ const _flyRt = new THREE.Vector3();
 const _flyUp = new THREE.Vector3(0, 1, 0);
 function fly(){
   if (figure8Mode && autoFly) return;
-  const sp=flySpeed;
+  const sp=Math.abs(flySpeed) || 0.1;
   camera.getWorldDirection(_flyFwd);_flyFwd.y=0;_flyFwd.normalize();
   _flyRt.crossVectors(_flyFwd,camera.up).normalize();
   if(keys.ArrowUp||keys.w){camera.position.addScaledVector(_flyFwd,sp);controls.target.addScaledVector(_flyFwd,sp)}
