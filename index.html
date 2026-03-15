@@ -1040,7 +1040,7 @@ function makeLabel(text, color){
 const _floatDummy = new THREE.Object3D();
 function updateFloat(t) {
   const isSphere = layoutMode === 'sphere';
-  const spinAngle = isSphere && autoFly ? flyOffset * 0.3 : 0;
+  const spinAngle = isSphere && autoFly && !figure8Mode ? flyOffset * 0.3 : 0;
   const cosS = Math.cos(spinAngle), sinS = Math.sin(spinAngle);
 
   instanceGroups.forEach(g => {
@@ -1394,21 +1394,28 @@ function animate(){
     const theta = flyOffset * 0.15;
     const sinT = Math.sin(theta), cosT = Math.cos(theta);
     const denom = 1 + sinT * sinT;
-    const radius = layoutMode === 'sphere' ? 120 : 80;
-    const depth = layoutMode === 'sphere' ? 120 : 90;
-    const f8x = radius * cosT / denom;
-    const f8y = 15 * sinT * cosT / denom + 10;
-    const f8z = depth * sinT;
-    camera.position.lerp(new THREE.Vector3(f8x, f8y, f8z), 0.03);
-    // Look ahead on the curve
+    const radius = layoutMode === 'sphere' ? 160 : 80;
+    const depth = layoutMode === 'sphere' ? 160 : 90;
+    const yAmp = layoutMode === 'sphere' ? 40 : 15;
+    const yBase = layoutMode === 'sphere' ? 20 : 10;
+    // Path point on the lemniscate
+    const pathX = radius * cosT / denom;
+    const pathY = yAmp * sinT * cosT / denom + yBase;
+    const pathZ = depth * sinT;
+    // Look-ahead point
     const lt = theta + 0.15;
     const sinL = Math.sin(lt), cosL = Math.cos(lt);
     const denomL = 1 + sinL * sinL;
-    controls.target.lerp(new THREE.Vector3(
-      radius * cosL / denomL,
-      15 * sinL * cosL / denomL + 10,
-      depth * sinL
-    ), 0.03);
+    const lookX = radius * cosL / denomL;
+    const lookY = yAmp * sinL * cosL / denomL + yBase;
+    const lookZ = depth * sinL;
+    // Preserve user zoom: maintain distance between camera and target
+    const currentDist = camera.position.distanceTo(controls.target);
+    const pathTarget = new THREE.Vector3(lookX, lookY, lookZ);
+    const pathDir = new THREE.Vector3(lookX - pathX, lookY - pathY, lookZ - pathZ).normalize();
+    const pathOrigin = pathTarget.clone().sub(pathDir.multiplyScalar(currentDist));
+    camera.position.lerp(pathOrigin, 0.03);
+    controls.target.lerp(pathTarget, 0.03);
   }
 
   updateFloat(t);
@@ -1430,7 +1437,7 @@ function animate(){
   }
 
   // Rotate labels with sphere
-  if (layoutMode === 'sphere' && autoFly) {
+  if (layoutMode === 'sphere' && autoFly && !figure8Mode) {
     const spin = flyOffset * 0.3;
     const cs = Math.cos(spin), ss = Math.sin(spin);
     labelSprites.forEach(s => {
