@@ -1779,12 +1779,11 @@ function makeLabel(text, color){
 
 // ─── Floating Animation ───
 const _floatDummy = new THREE.Object3D();
-function updateFloat(t, hoverDampen) {
+function updateFloat(t) {
   const isSphere = layoutMode === 'sphere';
   const isRadial = isSphere || layoutMode === 'helix' || layoutMode === 'oscillons' || layoutMode === 'mobiles';
   const spinAngle = isRadial && autoFly && !figure8Mode ? flyOffset * 0.3 : 0;
   const cosS = Math.cos(spinAngle), sinS = Math.sin(spinAngle);
-  const damp = hoverDampen || 1.0;
 
   instanceGroups.forEach(g => {
     let needsUpdate = false;
@@ -1798,8 +1797,8 @@ function updateFloat(t, hoverDampen) {
         if (waveMode) {
           px = rx; py = d.basePos.y; pz = rz;
         } else {
-          px = rx + Math.sin(t * d.freq + d.phase) * d.amp * 0.3 * damp;
-          py = d.basePos.y + Math.cos(t * d.freq * 0.7 + d.phase + 1.0) * d.amp * 0.3 * damp;
+          px = rx + Math.sin(t * d.freq + d.phase) * d.amp * 0.3;
+          py = d.basePos.y + Math.cos(t * d.freq * 0.7 + d.phase + 1.0) * d.amp * 0.3;
           pz = rz;
         }
       } else {
@@ -1809,8 +1808,8 @@ function updateFloat(t, hoverDampen) {
           let floatScale = 1;
           if (layoutMode === 'grid') floatScale = 0.15;
           else if (layoutMode === 'schotter') floatScale = 0.1 + (1 - d.basePos.y / 30) * 0.4;
-          px = d.basePos.x + Math.sin(t * d.freq + d.phase) * d.amp * floatScale * damp;
-          py = d.basePos.y + Math.cos(t * d.freq * 0.7 + d.phase + 1.0) * d.amp * 0.6 * floatScale * damp;
+          px = d.basePos.x + Math.sin(t * d.freq + d.phase) * d.amp * floatScale;
+          py = d.basePos.y + Math.cos(t * d.freq * 0.7 + d.phase + 1.0) * d.amp * 0.6 * floatScale;
           pz = d.basePos.z;
         }
         if (autoFly && layoutMode !== 'grid' && layoutMode !== 'schotter') {
@@ -2164,10 +2163,9 @@ function animate(){
   requestAnimationFrame(animate);
   const t = clock.getElapsedTime();
 
-  // Accumulate fly offset (dampen when hovering an artifact for easier clicking)
-  const hoverDampen = hoveredInstance ? 0.15 : 1.0;
+  // Accumulate fly offset
   if (autoFly) {
-    flyOffset += flySpeed * 0.02 * hoverDampen;
+    flyOffset += flySpeed * 0.02;
   }
 
   fly();
@@ -2201,7 +2199,7 @@ function animate(){
     controls.target.lerp(pathTarget, 0.03);
   }
 
-  updateFloat(t, hoverDampen);
+  updateFloat(t);
 
   // Keep pinned card next to pinned artifact on screen
   if (pinnedInstance && pinnedInstance.worldPos) {
