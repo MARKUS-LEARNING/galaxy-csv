@@ -31,7 +31,7 @@
   ::-webkit-scrollbar-thumb { background: rgba(0,0,0,0.15); border-radius: 4px; }
   ::-webkit-scrollbar-thumb:hover { background: rgba(0,0,0,0.25); }
 
-  canvas { display: block; position: fixed; top: 0; left: 0; }
+  canvas { display: block; position: fixed; top: 0; left: 0; touch-action: none; }
 
   #hud {
     position: fixed; top: 20px; left: 20px; z-index: 10; pointer-events: none;
@@ -55,29 +55,49 @@
 
   /* Mobile hamburger menu */
   #mobile-menu-btn {
-    display: none; position: fixed; bottom: 20px; right: 20px; z-index: 25;
+    display: none; position: fixed; bottom: 20px; right: 20px; z-index: 35;
     width: 48px; height: 48px; border-radius: 50%;
     background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
     border: 1px solid #ddd; cursor: pointer;
     font-size: 18px; color: #555;
     box-shadow: 0 4px 16px rgba(0,0,0,0.12);
     font-family: inherit;
+    transition: transform 0.2s ease, background 0.15s, color 0.15s;
   }
-  #mobile-menu-btn:active { background: #222; color: #fff; border-color: #222; }
+  #mobile-menu-btn:active { background: #222; color: #fff; border-color: #222; transform: scale(0.92); }
+  #mobile-menu-backdrop {
+    display: none; position: fixed; inset: 0; z-index: 29;
+    background: rgba(0,0,0,0.25); opacity: 0;
+    transition: opacity 0.3s ease;
+    -webkit-tap-highlight-color: transparent;
+  }
+  #mobile-menu-backdrop.visible { opacity: 1; }
   #mobile-menu {
     display: none; position: fixed; bottom: 0; left: 0; right: 0; z-index: 30;
     background: rgba(255,255,255,0.98); backdrop-filter: blur(16px);
     border-top: 1px solid #eee; border-radius: 16px 16px 0 0;
     max-height: 70vh; overflow-y: auto;
     box-shadow: 0 -8px 32px rgba(0,0,0,0.12);
-    padding: env(safe-area-inset-bottom, 0px);
-    transform: translateY(100%); transition: transform 0.3s ease;
+    padding-bottom: env(safe-area-inset-bottom, 0px);
+    transform: translateY(100%); transition: transform 0.3s cubic-bezier(0.4, 0, 0.2, 1);
   }
   #mobile-menu.open { transform: translateY(0); }
-  #mobile-menu .mm-tabs {
-    display: flex; border-bottom: 1px solid #eee;
+  /* Drag handle */
+  #mobile-menu .mm-handle {
+    display: flex; justify-content: center; padding: 10px 0 2px;
+    cursor: grab; touch-action: none;
+  }
+  #mobile-menu .mm-handle-bar {
+    width: 36px; height: 4px; border-radius: 2px;
+    background: rgba(0,0,0,0.15);
+  }
+  #mobile-menu .mm-header {
+    display: flex; align-items: center; border-bottom: 1px solid #eee;
     position: sticky; top: 0; background: rgba(255,255,255,0.98);
     backdrop-filter: blur(16px); z-index: 1;
+  }
+  #mobile-menu .mm-tabs {
+    display: flex; flex: 1;
   }
   #mobile-menu .mm-tab {
     flex: 1; padding: 14px 8px; font-family: inherit; font-size: 9px;
@@ -85,6 +105,13 @@
     background: none; border: none; cursor: pointer; text-align: center;
   }
   #mobile-menu .mm-tab.active { color: #222; border-bottom: 2px solid #222; }
+  #mobile-menu .mm-close {
+    width: 44px; height: 44px; display: flex; align-items: center; justify-content: center;
+    background: none; border: none; cursor: pointer;
+    font-size: 20px; color: #999; font-family: inherit;
+    flex-shrink: 0;
+  }
+  #mobile-menu .mm-close:active { color: #222; }
   #mobile-menu .mm-panel { display: none; padding: 14px 16px; }
   #mobile-menu .mm-panel.active { display: block; }
 
@@ -106,6 +133,7 @@
     box-shadow: 0 8px 32px rgba(0,0,0,0.12);
     border-radius: 4px;
   }
+  #album-card .ac-handle { display: none; }
   #album-card .ac-close {
     position: absolute; top: 8px; right: 12px;
     font-size: 18px; cursor: pointer; color: #767676;
@@ -128,6 +156,7 @@
     font-family: inherit; transition: background 0.15s;
   }
   #album-card .ac-link:hover { background: #555; }
+  #album-card .ac-link:active { transform: scale(0.95); }
   #album-card .ac-link.ac-yt:hover { background: #cc0000; }
   #album-card .ac-link.ac-spotify:hover { background: #1db954; }
   #album-card .ac-link.ac-apple:hover { background: #fa243c; }
@@ -273,6 +302,7 @@
     transition: all 0.15s ease;
   }
   #ctrl-panel .chip:hover { border-color: #999; transform: translateY(-1px); }
+  #ctrl-panel .chip:active { transform: scale(0.95); }
   #ctrl-panel .chip.on { background: #222; color: #fff; border-color: #222; }
   #ctrl-panel hr { border: none; border-top: 1px solid #f0f0f0; margin: 10px 0; }
 
@@ -333,6 +363,7 @@
     transition: all 0.15s ease;
   }
   #filter-panel .fp-chip:hover { border-color: #aaa; color: #222; transform: translateY(-1px); }
+  #filter-panel .fp-chip:active { transform: scale(0.95); }
   #filter-panel .fp-chip.on { background: #222; color: #fff; border-color: #222; }
   #filter-panel .fp-chip .fp-chip-count {
     font-size: 8px; color: #aaa; margin-left: 3px;
@@ -484,6 +515,7 @@
     #hud h1, #loading { animation: none !important; transition: none !important; }
     #artifact-bag .ab-body { transition: none; }
     #mobile-menu { transition: none; }
+    #mobile-menu-backdrop { transition: none; }
     #ctrl-panel, #filter-panel, #search-results { transition: none; }
   }
 
@@ -543,6 +575,7 @@
   body.dark-mode #album-card .ac-close:hover { color: #fff; }
   body.dark-mode #album-card.pinned { border-left-color: rgba(255,255,255,0.2); }
   body.dark-mode #album-card .ac-link { background: rgba(255,255,255,0.1); }
+  body.dark-mode #album-card .ac-handle-bar { background: rgba(255,255,255,0.2); }
   body.dark-mode #album-card .ac-heart .heart-path { stroke: rgba(255,255,255,0.3); }
   body.dark-mode #album-card .ac-heart:hover .heart-path { stroke: #e74c3c; }
   body.dark-mode #artifact-bag { background: rgba(12,12,18,0.92); border-color: rgba(255,255,255,0.08); }
@@ -562,10 +595,14 @@
   body.dark-mode #upload-bar .ub-link { color: rgba(255,255,255,0.6); }
   body.dark-mode #upload-bar .ub-link:hover { color: #fff; }
   body.dark-mode #mobile-menu-btn { background: rgba(12,12,18,0.9); border-color: rgba(255,255,255,0.1); color: rgba(255,255,255,0.7); }
+  body.dark-mode #mobile-menu-backdrop { background: rgba(0,0,0,0.5); }
   body.dark-mode #mobile-menu { background: rgba(12,12,18,0.98); border-color: rgba(255,255,255,0.08); }
+  body.dark-mode #mobile-menu .mm-handle-bar { background: rgba(255,255,255,0.2); }
   body.dark-mode #mobile-menu .mm-tab { color: rgba(255,255,255,0.5); }
   body.dark-mode #mobile-menu .mm-tab.active { color: #fff; border-color: #fff; }
-  body.dark-mode #mobile-menu .mm-tabs { background: rgba(12,12,18,0.98); border-color: rgba(255,255,255,0.06); }
+  body.dark-mode #mobile-menu .mm-header { background: rgba(12,12,18,0.98); border-color: rgba(255,255,255,0.06); }
+  body.dark-mode #mobile-menu .mm-close { color: rgba(255,255,255,0.5); }
+  body.dark-mode #mobile-menu .mm-close:active { color: #fff; }
   body.dark-mode.drag-over::after { border-color: rgba(255,255,255,0.3); }
 
   /* ─── Tablet (769-1199px) ─── */
@@ -593,6 +630,14 @@
       max-width: none; width: 100%;
       border-radius: 16px 16px 0 0; max-height: 50vh;
       overflow-y: auto; padding: 20px 20px calc(20px + env(safe-area-inset-bottom, 0px));
+    }
+    #album-card .ac-handle {
+      display: flex; justify-content: center; padding: 0 0 10px;
+      cursor: grab; touch-action: none;
+    }
+    #album-card .ac-handle-bar {
+      width: 36px; height: 4px; border-radius: 2px;
+      background: rgba(0,0,0,0.15);
     }
     #album-card .ac-name { font-size: 16px; }
     #album-card .ac-sub { font-size: 13px; }
@@ -675,10 +720,15 @@
 <div id="search-results" role="listbox"></div>
 
 <button id="mobile-menu-btn" aria-label="Open menu" aria-expanded="false">&#9776;</button>
+<div id="mobile-menu-backdrop"></div>
 <div id="mobile-menu" role="dialog" aria-label="Settings menu">
-  <div class="mm-tabs" role="tablist">
-    <button class="mm-tab active" data-panel="mm-customize" role="tab" aria-selected="true">Customize</button>
-    <button class="mm-tab" data-panel="mm-filter" role="tab" aria-selected="false">Filter</button>
+  <div class="mm-handle"><div class="mm-handle-bar"></div></div>
+  <div class="mm-header">
+    <div class="mm-tabs" role="tablist">
+      <button class="mm-tab active" data-panel="mm-customize" role="tab" aria-selected="true">Customize</button>
+      <button class="mm-tab" data-panel="mm-filter" role="tab" aria-selected="false">Filter</button>
+    </div>
+    <button class="mm-close" aria-label="Close menu">&times;</button>
   </div>
   <div class="mm-panel active" id="mm-customize" role="tabpanel"></div>
   <div class="mm-panel" id="mm-filter" role="tabpanel"></div>
@@ -729,6 +779,7 @@
 </div>
 
 <div id="album-card" role="dialog" aria-label="Album details">
+  <div class="ac-handle"><div class="ac-handle-bar"></div></div>
   <button class="ac-heart" title="Add to Artifact Archive" aria-label="Add to Artifact Archive">
     <svg class="heart-svg" viewBox="0 0 24 24" width="20" height="20">
       <path class="heart-path" d="M12 21.35l-1.45-1.32C5.4 15.36 2 12.28 2 8.5 2 5.42 4.42 3 7.5 3c1.74 0 3.41.81 4.5 2.09C13.09 3.81 14.76 3 16.5 3 19.58 3 22 5.42 22 8.5c0 3.78-3.4 6.86-8.55 11.54L12 21.35z"/>
@@ -1303,7 +1354,7 @@ function initScene(){
   scene.background=new THREE.Color(0xffffff);
   scene.fog=new THREE.FogExp2(0xffffff,0.0004);
   camera=new THREE.PerspectiveCamera(55,innerWidth/innerHeight,0.5,3000);
-  renderer=new THREE.WebGLRenderer({antialias:true});
+  renderer=new THREE.WebGLRenderer({antialias:!isMobile(),powerPreference:isMobile()?'default':'high-performance'});
   renderer.setSize(innerWidth,innerHeight);
   renderer.setPixelRatio(Math.min(devicePixelRatio,2));
   renderer.toneMapping=THREE.ACESFilmicToneMapping;
@@ -1920,7 +1971,7 @@ function onKey(e){
     e.preventDefault();
     if(document.getElementById('album-card').style.display==='block'){unpinInstance();return}
     const mm=document.getElementById('mobile-menu');
-    if(mm&&mm.classList.contains('open')){mm.classList.remove('open');document.getElementById('mobile-menu-btn').setAttribute('aria-expanded','false');return}
+    if(mm&&mm.classList.contains('open')){mm.querySelector('.mm-close').click();return}
     if(document.getElementById('ctrl-panel').classList.contains('open')){document.getElementById('ctrl-panel').classList.remove('open');document.getElementById('ctrl-toggle').setAttribute('aria-expanded','false');return}
     if(document.getElementById('filter-panel').classList.contains('open')){document.getElementById('filter-panel').classList.remove('open');document.getElementById('filter-toggle').setAttribute('aria-expanded','false');return}
     if(document.getElementById('search-results').classList.contains('open')){document.getElementById('search-results').classList.remove('open');document.getElementById('search-input').setAttribute('aria-expanded','false');return}
@@ -2069,6 +2120,42 @@ document.getElementById('album-card').querySelector('.ac-close').addEventListene
   e.stopPropagation();
   unpinInstance();
 });
+
+// ─── Album card swipe-to-close (mobile bottom sheet) ───
+{
+  const acCard = document.getElementById('album-card');
+  const acHandle = acCard.querySelector('.ac-handle');
+  let _acDragStartY = 0, _acDragY = 0, _acDragging = false;
+  acHandle.addEventListener('pointerdown', (e) => {
+    if (!isMobile()) return;
+    _acDragging = true; _acDragStartY = e.clientY; _acDragY = 0;
+    acCard.style.transition = 'none';
+    acHandle.setPointerCapture(e.pointerId);
+  });
+  acHandle.addEventListener('pointermove', (e) => {
+    if (!_acDragging) return;
+    _acDragY = Math.max(0, e.clientY - _acDragStartY);
+    acCard.style.transform = `translateY(${_acDragY}px)`;
+  });
+  acHandle.addEventListener('pointerup', () => {
+    if (!_acDragging) return;
+    _acDragging = false;
+    acCard.style.transition = '';
+    if (_acDragY > 80) {
+      acCard.style.transform = '';
+      unpinInstance();
+    } else {
+      acCard.style.transform = 'translateY(0)';
+      setTimeout(() => { acCard.style.transform = ''; }, 300);
+    }
+  });
+  acHandle.addEventListener('pointercancel', () => {
+    if (!_acDragging) return;
+    _acDragging = false;
+    acCard.style.transition = '';
+    acCard.style.transform = '';
+  });
+}
 
 // ─── Heart click ───
 document.getElementById('album-card').querySelector('.ac-heart').addEventListener('click', (e) => {
@@ -2758,20 +2845,78 @@ document.addEventListener('click', (e) => {
 // ─── Mobile Menu ───
 const mobileMenuBtn = document.getElementById('mobile-menu-btn');
 const mobileMenu = document.getElementById('mobile-menu');
+const mobileBackdrop = document.getElementById('mobile-menu-backdrop');
 if (mobileMenuBtn && mobileMenu) {
   let _mobileMenuPopulated = false;
-  mobileMenuBtn.addEventListener('click', () => {
-    const isOpen = mobileMenu.classList.toggle('open');
-    mobileMenuBtn.setAttribute('aria-expanded', isOpen);
-    mobileMenuBtn.textContent = isOpen ? '\u2715' : '\u2630';
-    // Reparent panel content between desktop panels and mobile menu
-    if (isOpen && !_mobileMenuPopulated) {
+
+  function openMobileMenu() {
+    if (mobileMenu.classList.contains('open')) return;
+    mobileMenu.classList.add('open');
+    mobileMenuBtn.setAttribute('aria-expanded', 'true');
+    mobileMenuBtn.textContent = '\u2715';
+    mobileBackdrop.style.display = 'block';
+    requestAnimationFrame(() => mobileBackdrop.classList.add('visible'));
+    if (!_mobileMenuPopulated) {
       populateMobileMenu();
       _mobileMenuPopulated = true;
-    } else if (!isOpen && _mobileMenuPopulated) {
+    }
+  }
+  function closeMobileMenu() {
+    if (!mobileMenu.classList.contains('open')) return;
+    mobileMenu.classList.remove('open');
+    mobileMenu.style.transform = '';
+    mobileMenuBtn.setAttribute('aria-expanded', 'false');
+    mobileMenuBtn.textContent = '\u2630';
+    mobileBackdrop.classList.remove('visible');
+    setTimeout(() => { mobileBackdrop.style.display = 'none'; }, 300);
+    if (_mobileMenuPopulated) {
       restoreDesktopPanels();
       _mobileMenuPopulated = false;
     }
+  }
+
+  mobileMenuBtn.addEventListener('click', () => {
+    if (mobileMenu.classList.contains('open')) closeMobileMenu();
+    else openMobileMenu();
+  });
+
+  // Close button inside menu
+  mobileMenu.querySelector('.mm-close').addEventListener('click', closeMobileMenu);
+
+  // Backdrop tap to close
+  mobileBackdrop.addEventListener('click', closeMobileMenu);
+
+  // Swipe-to-close on drag handle
+  const mmHandle = mobileMenu.querySelector('.mm-handle');
+  let _dragStartY = 0, _dragCurrentY = 0, _dragging = false;
+  mmHandle.addEventListener('pointerdown', (e) => {
+    _dragging = true; _dragStartY = e.clientY; _dragCurrentY = 0;
+    mobileMenu.style.transition = 'none';
+    mmHandle.setPointerCapture(e.pointerId);
+  });
+  mmHandle.addEventListener('pointermove', (e) => {
+    if (!_dragging) return;
+    _dragCurrentY = Math.max(0, e.clientY - _dragStartY);
+    mobileMenu.style.transform = `translateY(${_dragCurrentY}px)`;
+    mobileBackdrop.style.opacity = Math.max(0, 1 - _dragCurrentY / 300);
+  });
+  mmHandle.addEventListener('pointerup', () => {
+    if (!_dragging) return;
+    _dragging = false;
+    mobileMenu.style.transition = '';
+    mobileBackdrop.style.opacity = '';
+    if (_dragCurrentY > 100) {
+      closeMobileMenu();
+    } else {
+      mobileMenu.style.transform = 'translateY(0)';
+    }
+  });
+  mmHandle.addEventListener('pointercancel', () => {
+    if (!_dragging) return;
+    _dragging = false;
+    mobileMenu.style.transition = '';
+    mobileBackdrop.style.opacity = '';
+    mobileMenu.style.transform = 'translateY(0)';
   });
 
   // Tab switching
@@ -2792,7 +2937,6 @@ if (mobileMenuBtn && mobileMenu) {
     if (!mmCustomize || !mmFilter) return;
     const ctrlPanel = document.getElementById('ctrl-panel');
     const filterPanel = document.getElementById('filter-panel');
-    // Reparent children into mobile panels (avoids duplicate IDs)
     while (ctrlPanel.firstChild) mmCustomize.appendChild(ctrlPanel.firstChild);
     while (filterPanel.firstChild) mmFilter.appendChild(filterPanel.firstChild);
   }
