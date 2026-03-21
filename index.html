@@ -395,71 +395,28 @@
   }
   #filter-panel .fp-clear:hover { border-color: #999; color: #222; }
 
-  /* ─── Year Wheel Picker (iOS barrel-style) ─── */
-  #year-wheel {
+  /* ─── Year Dropdown ─── */
+  #year-dropdown {
     position: fixed; bottom: 20px; right: 80px; z-index: 15;
     display: none; flex-direction: column; align-items: center; gap: 4px;
   }
-  #year-wheel .yw-label {
+  #year-dropdown .yd-label {
     font-size: 7px; letter-spacing: 2px; text-transform: uppercase;
     color: #999;
   }
-  #year-wheel .yw-container {
-    position: relative; width: 72px; height: 140px;
-    overflow: hidden; border-radius: 8px;
+  #year-dropdown select {
+    font-family: inherit; font-size: 11px; letter-spacing: 0.5px;
+    padding: 6px 10px; border: 1px solid #ddd; border-radius: 4px;
     background: rgba(255,255,255,0.95); backdrop-filter: blur(12px);
-    border: 1px solid #e0e0e0;
-    box-shadow: 0 2px 12px rgba(0,0,0,0.08);
-    -webkit-mask-image: linear-gradient(to bottom,
-      transparent 0%, black 30%, black 70%, transparent 100%);
-    mask-image: linear-gradient(to bottom,
-      transparent 0%, black 30%, black 70%, transparent 100%);
+    color: #333; outline: none; cursor: pointer;
+    box-shadow: 0 2px 8px rgba(0,0,0,0.06);
   }
-  #year-wheel .yw-selection {
-    position: absolute; top: 50%; left: 4px; right: 4px;
-    height: 30px; transform: translateY(-50%);
-    border-top: 1.5px solid #333; border-bottom: 1.5px solid #333;
-    pointer-events: none; z-index: 1;
-  }
-  #year-wheel .yw-scroll {
-    width: 100%; height: 100%;
-    overflow-y: scroll; -webkit-overflow-scrolling: touch;
-    scroll-snap-type: y mandatory;
-    scrollbar-width: none;
-  }
-  #year-wheel .yw-scroll::-webkit-scrollbar { display: none; }
-  #year-wheel .yw-item {
-    height: 28px; display: flex; align-items: center; justify-content: center;
-    font-family: inherit; font-size: 13px; letter-spacing: 1px;
-    color: #555; cursor: pointer; scroll-snap-align: center;
-    transition: color 0.1s, font-weight 0.1s;
-    user-select: none; -webkit-user-select: none;
-  }
-  #year-wheel .yw-item.selected {
-    color: #111; font-weight: 700;
-  }
-  #year-wheel .yw-item.all-years {
-    font-size: 9px; letter-spacing: 2px; text-transform: uppercase;
-    color: #999;
-  }
-  #year-wheel .yw-item.all-years.selected {
-    color: #111; font-weight: 700;
-  }
-  #year-wheel .yw-spacer {
-    height: 56px; flex-shrink: 0;
-  }
-  /* Dark mode */
-  body.dark-mode #year-wheel .yw-container {
+  #year-dropdown select:focus { border-color: #999; }
+  body.dark-mode #year-dropdown .yd-label { color: rgba(255,255,255,0.4); }
+  body.dark-mode #year-dropdown select {
     background: rgba(12,12,18,0.92); border-color: rgba(255,255,255,0.08);
+    color: #eee;
   }
-  body.dark-mode #year-wheel .yw-selection {
-    border-color: rgba(255,255,255,0.6);
-  }
-  body.dark-mode #year-wheel .yw-item { color: rgba(255,255,255,0.45); }
-  body.dark-mode #year-wheel .yw-item.selected { color: #fff; }
-  body.dark-mode #year-wheel .yw-item.all-years { color: rgba(255,255,255,0.3); }
-  body.dark-mode #year-wheel .yw-item.all-years.selected { color: #fff; }
-  body.dark-mode #year-wheel .yw-label { color: rgba(255,255,255,0.4); }
 
   /* Upload prompt (bottom-left) */
   #upload-bar .ub-link {
@@ -761,8 +718,8 @@
     #info { font-size: 10px; }
     #upload-bar .ub-link { font-size: 12px; min-height: 44px; display: inline-flex; align-items: center; }
 
-    /* Year wheel: above hamburger button on mobile */
-    #year-wheel { right: 12px; bottom: 80px; }
+    /* Year dropdown: above hamburger button on mobile */
+    #year-dropdown { right: 12px; bottom: 80px; }
 
     /* Hamburger menu visible */
     #mobile-menu-btn { display: flex; align-items: center; justify-content: center; }
@@ -819,12 +776,9 @@
 </div>
 <div id="search-results" role="listbox"></div>
 
-<div id="year-wheel" aria-label="Year picker">
-  <span class="yw-label">Year</span>
-  <div class="yw-container">
-    <div class="yw-selection"></div>
-    <div class="yw-scroll" id="yw-scroll"></div>
-  </div>
+<div id="year-dropdown" aria-label="Year filter">
+  <span class="yd-label">Year</span>
+  <select id="year-select" aria-label="Filter by year"></select>
 </div>
 
 <button id="mobile-menu-btn" aria-label="Open menu" aria-expanded="false">&#9776;</button>
@@ -1076,21 +1030,18 @@ function onFilterChipClick(col, val, chipEl) {
 
 const MAX_FILTER_CHIPS = 20;
 
-// ─── Year Wheel State ───
-let yearWheelCol = null;
-let selectedYear = null; // null = "ALL"
-let yearWheelDebounce = null;
-const YEAR_ITEM_HEIGHT = 28;
+// ─── Year Dropdown State ───
+let yearDropdownCol = null;
 
-function populateYearWheel(hdrs, rows) {
+function populateYearDropdown(hdrs, rows) {
   const yearCol = findCol(hdrs, ['year']);
-  yearWheelCol = yearCol;
+  yearDropdownCol = yearCol;
 
-  const yearWheel = document.getElementById('year-wheel');
-  const scrollContainer = document.getElementById('yw-scroll');
+  const wrapper = document.getElementById('year-dropdown');
+  const select = document.getElementById('year-select');
 
   if (!yearCol) {
-    yearWheel.style.display = 'none';
+    wrapper.style.display = 'none';
     return;
   }
 
@@ -1107,129 +1058,41 @@ function populateYearWheel(hdrs, rows) {
   const sortedYears = [...yearSet].sort((a, b) => a - b);
 
   if (sortedYears.length < 2) {
-    yearWheel.style.display = 'none';
+    wrapper.style.display = 'none';
     return;
   }
 
-  // Build wheel items
-  scrollContainer.innerHTML = '';
+  // Build options
+  select.innerHTML = '';
 
-  // Top spacer (so "ALL" can center in the selection window)
-  const topSpacer = document.createElement('div');
-  topSpacer.className = 'yw-spacer';
-  scrollContainer.appendChild(topSpacer);
+  const allOption = document.createElement('option');
+  allOption.value = '';
+  allOption.textContent = 'All Years';
+  select.appendChild(allOption);
 
-  // "ALL" option
-  const allItem = document.createElement('div');
-  allItem.className = 'yw-item all-years selected';
-  allItem.textContent = 'All';
-  allItem.dataset.year = '';
-  scrollContainer.appendChild(allItem);
-
-  // Year items
   sortedYears.forEach(year => {
-    const item = document.createElement('div');
-    item.className = 'yw-item';
-    item.textContent = year;
-    item.dataset.year = year;
-    scrollContainer.appendChild(item);
+    const opt = document.createElement('option');
+    opt.value = year;
+    opt.textContent = year;
+    select.appendChild(opt);
   });
 
-  // Bottom spacer
-  const bottomSpacer = document.createElement('div');
-  bottomSpacer.className = 'yw-spacer';
-  scrollContainer.appendChild(bottomSpacer);
+  wrapper.style.display = 'flex';
+  select.value = '';
 
-  yearWheel.style.display = 'flex';
-  selectedYear = null;
+  // Change handler
+  select.addEventListener('change', () => {
+    const selectedValue = select.value;
 
-  // Ensure scroll starts at top so "All" is selected
-  scrollContainer.scrollTop = 0;
-
-  // ─── Scroll-snap detection (skip during initial render) ───
-  let yearWheelReady = false;
-  requestAnimationFrame(() => { yearWheelReady = true; });
-
-  scrollContainer.addEventListener('scroll', () => {
-    if (!yearWheelReady) return;
-    clearTimeout(yearWheelDebounce);
-    yearWheelDebounce = setTimeout(() => {
-      updateYearSelection(scrollContainer);
-    }, 80);
-  });
-
-  // ─── Tap to select ───
-  scrollContainer.addEventListener('click', (e) => {
-    const item = e.target.closest('.yw-item');
-    if (!item) return;
-
-    const itemIndex = [...scrollContainer.querySelectorAll('.yw-item')].indexOf(item);
-    const SPACER_HEIGHT = 56;
-    const containerCenter = 140 / 2;
-    const targetScroll = SPACER_HEIGHT + (itemIndex * YEAR_ITEM_HEIGHT) - containerCenter + (YEAR_ITEM_HEIGHT / 2);
-    scrollContainer.scrollTo({ top: Math.max(0, targetScroll), behavior: 'smooth' });
-  });
-}
-
-function updateYearSelection(scrollContainer) {
-  const scrollTop = scrollContainer.scrollTop;
-  const items = scrollContainer.querySelectorAll('.yw-item');
-  const SPACER_HEIGHT = 56;
-  const containerCenter = 140 / 2;
-  // Items start after the spacer, so subtract spacer from the scroll-to-center calc
-  const centerInContent = scrollTop + containerCenter - SPACER_HEIGHT;
-  const closestIndex = Math.round(centerInContent / YEAR_ITEM_HEIGHT);
-  const clampedIndex = Math.max(0, Math.min(closestIndex, items.length - 1));
-  const selectedItem = items[clampedIndex];
-
-  // Update visual selection
-  items.forEach(item => {
-    item.classList.remove('selected');
-  });
-  selectedItem.classList.add('selected');
-
-  // Update filter
-  const yearValue = selectedItem.dataset.year;
-  const isAllYears = yearValue === '';
-  const previousYear = selectedYear;
-
-  if (isAllYears) {
-    selectedYear = null;
-  } else {
-    selectedYear = yearValue;
-  }
-
-  // Only rebuild if selection changed
-  const selectionChanged = previousYear !== selectedYear;
-  if (selectionChanged) {
-    applyYearFilter();
-  }
-}
-
-function applyYearFilter() {
-  if (!yearWheelCol) return;
-
-  if (selectedYear === null) {
-    // Remove year filter
-    delete activeFilters[yearWheelCol];
-  } else {
-    // Set year filter to single year
-    activeFilters[yearWheelCol] = new Set([selectedYear]);
-  }
-
-  // Sync chip UI in filter panel
-  const filterChips = document.querySelectorAll('#filter-list .fp-chip');
-  filterChips.forEach(chip => {
-    const chipCol = chip.dataset.col;
-    const chipVal = chip.dataset.val;
-    if (chipCol === yearWheelCol) {
-      const shouldBeOn = selectedYear !== null && chipVal === selectedYear;
-      chip.classList.toggle('on', shouldBeOn);
+    if (selectedValue === '') {
+      delete activeFilters[yearCol];
+    } else {
+      activeFilters[yearCol] = new Set([selectedValue]);
     }
-  });
 
-  clearTimeout(_filterDebounce);
-  _filterDebounce = setTimeout(rebuildViz, 150);
+    clearTimeout(_filterDebounce);
+    _filterDebounce = setTimeout(rebuildViz, 150);
+  });
 }
 
 function populateFilterPanel(hdrs, rows) {
@@ -1245,7 +1108,14 @@ function populateFilterPanel(hdrs, rows) {
   const filterList = document.getElementById('filter-list');
   filterList.innerHTML = '';
 
+  // Columns to skip in filter chips
+  const skipCols = new Set();
+  const durationCol = findCol(hdrs, ['time', 'duration', 'length']);
+  if (durationCol) skipCols.add(durationCol);
+
   hdrs.forEach(col => {
+    if (skipCols.has(col)) return;
+
     const valueFreq = {};
     rows.forEach(r => {
       const v = (r[col] || '').toString();
@@ -2671,7 +2541,7 @@ function loadData(text) {
   activeSortCol = null;
   activeSortDir = 'asc';
   populateFilterPanel(h, masterData);
-  populateYearWheel(h, masterData);
+  populateYearDropdown(h, masterData);
   rebuildViz();
   announce(totalRows.toLocaleString() + ' tracks loaded');
 }
@@ -2724,7 +2594,7 @@ function handleFile(f) {
           masterData = sample(r);
           activeFilters = {}; activeSortCol = null; activeSortDir = 'asc';
           populateFilterPanel(h, masterData);
-          populateYearWheel(h, masterData);
+          populateYearDropdown(h, masterData);
           rebuildViz();
           setProgress(100);
           status.textContent = `/// ${totalRows.toLocaleString()} tracks loaded ///`;
@@ -2755,7 +2625,7 @@ function handleFile(f) {
           masterData = msg.rows;
           activeFilters = {}; activeSortCol = null; activeSortDir = 'asc';
           populateFilterPanel(headers, masterData);
-          populateYearWheel(headers, masterData);
+          populateYearDropdown(headers, masterData);
           rebuildViz();
           setProgress(100);
           status.textContent = `/// ${totalRows.toLocaleString()} tracks loaded ///`;
@@ -2992,15 +2862,10 @@ document.getElementById('filter-clear').addEventListener('click', () => {
   document.getElementById('sort-dir').textContent = 'ASC';
   document.getElementById('sort-dir').classList.add('on');
   document.querySelectorAll('#filter-list .fp-chip').forEach(c => c.classList.remove('on'));
-  // Reset year wheel to "All"
-  selectedYear = null;
-  const ywScroll = document.getElementById('yw-scroll');
-  if (ywScroll) {
-    ywScroll.scrollTo({ top: 0, behavior: 'smooth' });
-    const ywItems = ywScroll.querySelectorAll('.yw-item');
-    ywItems.forEach(item => item.classList.remove('selected'));
-    const allItem = ywScroll.querySelector('.all-years');
-    if (allItem) allItem.classList.add('selected');
+  // Reset year dropdown to "All"
+  const yearSelect = document.getElementById('year-select');
+  if (yearSelect) {
+    yearSelect.value = '';
   }
   rebuildViz();
 });
